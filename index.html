@@ -1,9 +1,10 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="es" data-theme="classic-casino">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prompt Maestro - Juego de Dados Profesional</title>
+    <title>DiceMaster Pro - Juego de Dados Profesional</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,16 +15,16 @@
         <!-- Header -->
         <header class="app-header">
             <div class="header-content">
-                <h1 class="app-title">🎲 Prompt Maestro</h1>
+                <h1 class="app-title">🎲 DiceMaster Pro</h1>
                 <div class="header-controls">
+                    <button id="theme-language-btn" class="btn-icon" title="Tema e Idioma">
+                        <span class="icon-theme">🎨</span>
+                    </button>
                     <button id="dice-config-btn" class="btn-icon" title="Configuración de Dados">
-                        <span class="icon-dice">🎯</span>
+                        <span class="icon-dice">⚅</span>
                     </button>
                     <button id="fullscreen-btn" class="btn-icon" title="Pantalla completa">
                         <span class="icon-fullscreen">⛶</span>
-                    </button>
-                    <button id="settings-btn" class="btn-icon" title="Configuración">
-                        <span class="icon-settings">⚙️</span>
                     </button>
                 </div>
             </div>
@@ -47,10 +48,6 @@
                 <div class="game-controls">
                     <h2>Controles del Juego</h2>
                     <button id="roll-btn" class="btn-primary">🎯 Lanzar Dados</button>
-                    <div class="control-buttons">
-                        <button id="new-session-btn" class="btn-secondary">Nueva Sesión</button>
-                        <button id="reset-btn" class="btn-outline">Reiniciar Todo</button>
-                    </div>
                 </div>
 
                 <div class="current-player">
@@ -59,13 +56,16 @@
                         <div class="player-avatar" style="background-color: #4f46e5;">👤</div>
                         <span class="player-name">Esperando jugadores...</span>
                     </div>
+                    <div id="next-player-display" class="player-display next-player">
+                        <div class="player-avatar" style="background-color: #6b7280;">⏭️</div>
+                        <span class="player-name">Se prepara: -</span>
+                    </div>
                 </div>
             </section>
 
             <!-- Área de Resultados -->
             <section class="results-area">
                 <div class="dice-display" id="dice-display">
-                    <!-- Los dados aparecerán aquí dinámicamente -->
                     <div class="dice-placeholder">
                         <p>Lanza los dados para comenzar</p>
                     </div>
@@ -84,11 +84,13 @@
             <section class="participants-panel">
                 <div class="panel-header">
                     <h2>Participantes</h2>
-                    <button id="add-participant-btn" class="btn-icon-small">+</button>
+                    <div class="participant-controls">
+                        <button id="add-participant-btn" class="btn-icon-small">+</button>
+                        <button id="remove-participant-btn" class="btn-icon-small">-</button>
+                    </div>
                 </div>
                 
                 <div class="participants-list" id="participants-list">
-                    <!-- Los participantes se agregarán dinámicamente -->
                     <div class="empty-state">
                         <p>No hay participantes. Agrega el primero.</p>
                     </div>
@@ -132,16 +134,29 @@
                 </div>
             </section>
 
-            <!-- Historial -->
-            <section class="history-panel">
+            <!-- Historial y Controles -->
+            <section class="history-controls-panel">
                 <div class="panel-header">
                     <h2>Historial de Tiradas</h2>
-                    <button id="clear-history-btn" class="btn-outline">Limpiar</button>
+                    <div class="history-controls">
+                        <button id="new-session-btn" class="btn-secondary">Nueva Sesión</button>
+                        <button id="reset-btn" class="btn-outline">Reiniciar Todo</button>
+                        <button id="clear-history-btn" class="btn-outline">Limpiar</button>
+                    </div>
                 </div>
                 <div class="history-list" id="history-list">
-                    <!-- El historial se mostrará aquí -->
                     <div class="empty-state">
                         <p>No hay historial de tiradas aún.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Historial de Partidas -->
+            <section class="sessions-history">
+                <h2>Historial de Partidas</h2>
+                <div class="sessions-list" id="sessions-list">
+                    <div class="empty-state">
+                        <p>No hay partidas anteriores.</p>
                     </div>
                 </div>
             </section>
@@ -156,6 +171,9 @@
                 </div>
                 
                 <div class="modal-body">
+                    <div class="config-warning">
+                        ⚠️ Cambiar esta configuración reiniciará la partida actual
+                    </div>
                     <div class="setting-group">
                         <h3>Tipo de Dado</h3>
                         <div class="dice-type-grid">
@@ -200,18 +218,18 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button id="save-dice-config" class="btn-primary">Aplicar</button>
+                    <button id="save-dice-config" class="btn-primary">Aplicar y Reiniciar</button>
                     <button id="cancel-dice-config" class="btn-outline">Cancelar</button>
                 </div>
             </div>
         </div>
 
-        <!-- Modal de Configuración General -->
-        <div id="settings-modal" class="modal">
+        <!-- Modal de Tema e Idioma -->
+        <div id="theme-language-modal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>Configuración General</h2>
-                    <button id="close-settings" class="btn-icon">&times;</button>
+                    <h2>Tema e Idioma</h2>
+                    <button id="close-theme-language" class="btn-icon">&times;</button>
                 </div>
                 
                 <div class="modal-body">
@@ -245,11 +263,6 @@
                     </div>
 
                     <div class="setting-group">
-                        <h3>Máximo de Participantes</h3>
-                        <input type="number" id="max-participants" min="2" max="10" value="4">
-                    </div>
-
-                    <div class="setting-group">
                         <h3>Rotación de Turnos</h3>
                         <label class="switch">
                             <input type="checkbox" id="rotate-turns">
@@ -260,8 +273,8 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button id="save-settings" class="btn-primary">Guardar</button>
-                    <button id="cancel-settings" class="btn-outline">Cancelar</button>
+                    <button id="save-theme-language" class="btn-primary">Guardar</button>
+                    <button id="cancel-theme-language" class="btn-outline">Cancelar</button>
                 </div>
             </div>
         </div>
@@ -286,11 +299,6 @@
                         <div class="form-group">
                             <label for="participant-name">Nombre:</label>
                             <input type="text" id="participant-name" placeholder="Ingresa el nombre" maxlength="20">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="participant-color">Color:</label>
-                            <input type="color" id="participant-color" value="#dc2626">
                         </div>
                     </div>
                 </div>
