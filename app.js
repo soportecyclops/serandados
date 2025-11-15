@@ -1,25 +1,27 @@
 // PROMPT MAESTRO - Aplicación Web de Dados
-// Archivo principal de JavaScript
+// Archivo principal de JavaScript - Versión Casino
 
 class PromptMaestro {
     constructor() {
         this.participants = [];
         this.history = [];
-        this.currentRound = 0;
-        this.totalSessions = 0;
+        this.currentRound = 1;
+        this.totalSessions = 1;
+        this.currentParticipantIndex = 0;
+        this.isRolling = false;
+        this.roundInProgress = false;
+        
         this.settings = {
             language: 'es',
-            theme: 'light',
+            theme: 'dark',
             soundEnabled: true,
             targetScore: 100,
             maxParticipants: 4,
             diceType: 'd6',
             diceCount: 2,
-            counterType: 'numbers'
+            counterType: 'numbers',
+            rotateTurns: false
         };
-        
-        this.currentParticipantIndex = 0;
-        this.isRolling = false;
         
         this.init();
     }
@@ -31,6 +33,9 @@ class PromptMaestro {
         this.updateLeaderboard();
         this.updateUI();
         this.setupAvatars();
+        this.updateCurrentPlayerDisplay();
+        this.updateScoreVisualization();
+        this.renderHistory();
     }
 
     // Sistema de almacenamiento
@@ -53,8 +58,8 @@ class PromptMaestro {
                 const gameState = JSON.parse(saved);
                 this.participants = gameState.participants || [];
                 this.history = gameState.history || [];
-                this.currentRound = gameState.currentRound || 0;
-                this.totalSessions = gameState.totalSessions || 0;
+                this.currentRound = gameState.currentRound || 1;
+                this.totalSessions = gameState.totalSessions || 1;
                 this.settings = { ...this.settings, ...gameState.settings };
                 this.currentParticipantIndex = gameState.currentParticipantIndex || 0;
             } catch (e) {
@@ -68,20 +73,17 @@ class PromptMaestro {
         // Botones principales
         document.getElementById('roll-btn').addEventListener('click', () => this.rollDice());
         document.getElementById('new-session-btn').addEventListener('click', () => this.newSession());
-        document.getElementById('next-round-btn').addEventListener('click', () => this.nextRound());
         document.getElementById('reset-btn').addEventListener('click', () => this.resetGame());
 
         // Configuración de dados
-        document.getElementById('dice-type').addEventListener('change', (e) => {
-            this.settings.diceType = e.target.value;
-            this.saveToStorage();
-        });
+        document.getElementById('dice-config-btn').addEventListener('click', () => this.showDiceConfigModal());
+        document.getElementById('close-dice-config').addEventListener('click', () => this.hideDiceConfigModal());
+        document.getElementById('save-dice-config').addEventListener('click', () => this.saveDiceConfig());
+        document.getElementById('cancel-dice-config').addEventListener('click', () => this.hideDiceConfigModal());
 
         document.getElementById('dice-count').addEventListener('input', (e) => {
             const count = parseInt(e.target.value);
             document.getElementById('dice-count-display').textContent = count;
-            this.settings.diceCount = count;
-            this.saveToStorage();
         });
 
         // Configuración de participantes
@@ -125,6 +127,12 @@ class PromptMaestro {
     rollDice() {
         if (this.isRolling || this.participants.length === 0) return;
 
+        // Iniciar ronda si es el primer lanzamiento
+        if (!this.roundInProgress) {
+            this.roundInProgress = true;
+            this.currentParticipantIndex = 0;
+        }
+
         const participant = this.participants[this.currentParticipantIndex];
         const diceCount = this.settings.diceCount;
         const diceType = this.getDiceMaxValue(this.settings.diceType);
@@ -143,27 +151,35 @@ class PromptMaestro {
                 total += roll;
             }
 
-            this.displayResults(results, total);
+            this.displayDiceResults(results);
             this.addToHistory(participant, results, total);
             
             // Actualizar puntaje del participante
             participant.score += total;
             participant.rounds++;
 
-            this.currentParticipantIndex = (this.currentParticipantIndex + 1) % this.participants.length;
+            // Avanzar al siguiente participante
+            this.currentParticipantIndex++;
+            
+            // Verificar si la ronda ha terminado
+            if (this.currentParticipantIndex >= this.participants.length) {
+                this.endRound();
+            } else {
+                this.updateCurrentPlayerDisplay();
+            }
+
             this.isRolling = false;
             
             this.saveToStorage();
             this.renderParticipants();
             this.updateLeaderboard();
             this.updateScoreVisualization();
-            this.checkWinner();
 
             // Reproducir sonido si está habilitado
             if (this.settings.soundEnabled) {
                 this.playDiceSound();
             }
-        }, 600);
+        }, 1000);
     }
 
     getDiceMaxValue(diceType) {
@@ -184,12 +200,24 @@ class PromptMaestro {
         for (let i = 0; i < count; i++) {
             const dice = document.createElement('div');
             dice.className = 'dice rolling';
-            dice.textContent = '?';
+            
+            // Crear la cara del dado con puntos
+            const diceFace = document.createElement('div');
+            diceFace.className = 'dice-face';
+            
+            // Agregar puntos placeholder durante la animación
+            for (let j = 0; j < 9; j++) {
+                const dot = document.createElement('div');
+                dot.className = 'dot';
+                diceFace.appendChild(dot);
+            }
+            
+            dice.appendChild(diceFace);
             diceDisplay.appendChild(dice);
         }
     }
 
-    displayResults(results, total) {
+    displayDiceResults(results) {
         const diceDisplay = document.getElementById('dice-display');
         const currentResult = document.getElementById('current-result');
         const individualDice = document.getElementById('individual-dice');
@@ -197,10 +225,22 @@ class PromptMaestro {
         diceDisplay.innerHTML = '';
         individualDice.innerHTML = '';
 
+        let total = 0;
+
         results.forEach((result, index) => {
+            total += result;
+            
             const dice = document.createElement('div');
             dice.className = 'dice';
-            dice.textContent = result;
+            dice.setAttribute('data-value', result);
+            
+            const diceFace = document.createElement('div');
+            diceFace.className = 'dice-face';
+            
+            // Crear los puntos según el valor del dado
+            this.createDiceDots(diceFace, result);
+            
+            dice.appendChild(diceFace);
             diceDisplay.appendChild(dice);
 
             const diceResult = document.createElement('span');
@@ -210,6 +250,80 @@ class PromptMaestro {
         });
 
         currentResult.querySelector('.total-score').textContent = total;
+    }
+
+    createDiceDots(diceFace, value) {
+        // Limpiar puntos existentes
+        diceFace.innerHTML = '';
+        
+        // Configurar puntos según el valor
+        const dotPositions = {
+            1: [5], // Centro
+            2: [1, 9], // Esquinas opuestas
+            3: [1, 5, 9], // Diagonal
+            4: [1, 3, 7, 9], // Esquinas
+            5: [1, 3, 5, 7, 9], // Esquinas + centro
+            6: [1, 3, 4, 6, 7, 9], // Dos columnas
+            7: [1, 3, 4, 5, 6, 7, 9], // d6 + centro
+            8: [1, 2, 3, 4, 6, 7, 8, 9], // Todas menos centro
+            9: [1, 2, 3, 4, 5, 6, 7, 8, 9], // Todas
+            10: [1, 2, 3, 4, 5, 6, 7, 8, 9, 5] // Todas + centro duplicado (placeholder)
+        };
+
+        const positions = dotPositions[value] || dotPositions[6];
+        
+        for (let i = 1; i <= 9; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'dot';
+            if (positions.includes(i)) {
+                diceFace.appendChild(dot);
+            }
+        }
+    }
+
+    endRound() {
+        this.currentRound++;
+        this.roundInProgress = false;
+        
+        // Rotar turnos si está habilitado
+        if (this.settings.rotateTurns && this.participants.length > 1) {
+            const first = this.participants.shift();
+            this.participants.push(first);
+        }
+        
+        this.currentParticipantIndex = 0;
+        this.updateCurrentPlayerDisplay();
+        this.updateUI();
+        this.saveToStorage();
+        
+        // Mostrar notificación de nueva ronda
+        this.showRoundNotification();
+    }
+
+    showRoundNotification() {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-card);
+            color: var(--text-gold);
+            padding: var(--spacing-xl);
+            border-radius: var(--border-radius-lg);
+            border: 3px solid var(--border-gold);
+            font-size: var(--font-size-2xl);
+            font-weight: bold;
+            z-index: 1001;
+            box-shadow: var(--shadow-lg);
+        `;
+        notification.textContent = `¡Ronda ${this.currentRound}!`;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 2000);
     }
 
     // Sistema de participantes
@@ -267,7 +381,7 @@ class PromptMaestro {
         } else {
             title.textContent = 'Agregar Participante';
             document.getElementById('participant-name').value = '';
-            document.getElementById('participant-color').value = '#4f46e5';
+            document.getElementById('participant-color').value = '#dc2626';
             document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
         }
         
@@ -322,6 +436,7 @@ class PromptMaestro {
         this.renderParticipants();
         this.updateLeaderboard();
         this.updateScoreVisualization();
+        this.updateCurrentPlayerDisplay();
         this.saveToStorage();
     }
 
@@ -335,8 +450,9 @@ class PromptMaestro {
 
         participantsList.innerHTML = '';
         this.participants.forEach((participant, index) => {
+            const isCurrentTurn = this.roundInProgress && index === this.currentParticipantIndex;
             const participantElement = document.createElement('div');
-            participantElement.className = 'participant-item';
+            participantElement.className = `participant-item ${isCurrentTurn ? 'current-turn' : ''}`;
             participantElement.innerHTML = `
                 <div class="participant-avatar" style="background-color: ${participant.color}">
                     ${participant.avatarEmoji}
@@ -370,16 +486,38 @@ class PromptMaestro {
     }
 
     removeParticipant(index) {
-        if (confirm('¿Estás seguro de que quieres eliminar este participante?')) {
+        if (confirm('¿Estás seguro de que quieres eliminar este participante? Se perderán sus puntajes.')) {
             this.participants.splice(index, 1);
             if (this.currentParticipantIndex >= this.participants.length) {
                 this.currentParticipantIndex = 0;
             }
+            this.roundInProgress = false;
             this.renderParticipants();
             this.updateLeaderboard();
             this.updateScoreVisualization();
+            this.updateCurrentPlayerDisplay();
             this.saveToStorage();
         }
+    }
+
+    updateCurrentPlayerDisplay() {
+        const display = document.getElementById('current-player-display');
+        
+        if (this.participants.length === 0 || !this.roundInProgress) {
+            display.innerHTML = `
+                <div class="player-avatar" style="background-color: #6b7280;">👤</div>
+                <span class="player-name">Esperando jugadores...</span>
+            `;
+            return;
+        }
+
+        const currentPlayer = this.participants[this.currentParticipantIndex];
+        display.innerHTML = `
+            <div class="player-avatar" style="background-color: ${currentPlayer.color}">
+                ${currentPlayer.avatarEmoji}
+            </div>
+            <span class="player-name">${currentPlayer.name}</span>
+        `;
     }
 
     // Sistema de puntuación y líderboard
@@ -401,7 +539,7 @@ class PromptMaestro {
                         ${participant.name}
                     </div>
                 </td>
-                <td>${participant.score}</td>
+                <td style="font-weight: 700; color: var(--text-gold);">${participant.score}</td>
                 <td>${participant.rounds}</td>
             `;
             leaderboardBody.appendChild(row);
@@ -412,36 +550,83 @@ class PromptMaestro {
         const scoreDisplay = document.getElementById('score-display');
         scoreDisplay.innerHTML = '';
 
+        if (this.participants.length === 0) {
+            scoreDisplay.innerHTML = '<div class="empty-state"><p>Agrega participantes para ver el tanteador</p></div>';
+            return;
+        }
+
         this.participants.forEach(participant => {
             const counter = document.createElement('div');
             counter.className = 'visual-counter';
             
-            let displayValue = '';
             const score = participant.score;
-            
-            switch (this.settings.counterType) {
-                case 'matches':
-                    displayValue = '🔥'.repeat(Math.min(score, 10)) + (score > 10 ? `+${score}` : '');
-                    break;
-                case 'sticks':
-                    displayValue = '│'.repeat(Math.min(score, 10)) + (score > 10 ? `+${score}` : '');
-                    break;
-                case 'stones':
-                    displayValue = '●'.repeat(Math.min(score, 10)) + (score > 10 ? `+${score}` : '');
-                    break;
-                case 'beans':
-                    displayValue = '🌰'.repeat(Math.min(score, 10)) + (score > 10 ? `+${score}` : '');
-                    break;
-                default:
-                    displayValue = score.toString();
-            }
+            const displayItems = this.getCounterDisplay(score);
             
             counter.innerHTML = `
-                <div class="counter-value">${displayValue}</div>
-                <div class="counter-label">${participant.name}</div>
+                <div class="counter-player">
+                    <div class="participant-avatar" style="background-color: ${participant.color}; width: 30px; height: 30px; font-size: 14px;">
+                        ${participant.avatarEmoji}
+                    </div>
+                    <span>${participant.name}</span>
+                </div>
+                <div class="counter-display">
+                    <div class="counter-items">${displayItems}</div>
+                    <div class="counter-total">${score}</div>
+                </div>
             `;
             scoreDisplay.appendChild(counter);
         });
+    }
+
+    getCounterDisplay(score) {
+        let displayHTML = '';
+        
+        switch (this.settings.counterType) {
+            case 'matches':
+                displayHTML = this.groupItems('🔥', score, 5);
+                break;
+            case 'sticks':
+                displayHTML = this.groupItems('│', score, 5);
+                break;
+            case 'stones':
+                displayHTML = this.groupItems('●', score, 5);
+                break;
+            case 'beans':
+                displayHTML = this.groupItems('🌰', score, 5);
+                break;
+            default:
+                displayHTML = `<span>${score}</span>`;
+        }
+        
+        return displayHTML;
+    }
+
+    groupItems(item, count, groupSize) {
+        if (count === 0) return '';
+        
+        let html = '';
+        const fullGroups = Math.floor(count / groupSize);
+        const remainder = count % groupSize;
+        
+        // Agrupar de 5 en 5
+        for (let i = 0; i < fullGroups; i++) {
+            html += `<div class="counter-group">`;
+            for (let j = 0; j < groupSize; j++) {
+                html += `<span class="counter-item">${item}</span>`;
+            }
+            html += `</div>`;
+        }
+        
+        // Resto
+        if (remainder > 0) {
+            html += `<div class="counter-group">`;
+            for (let j = 0; j < remainder; j++) {
+                html += `<span class="counter-item">${item}</span>`;
+            }
+            html += `</div>`;
+        }
+        
+        return html;
     }
 
     // Sistema de historial
@@ -456,7 +641,8 @@ class PromptMaestro {
             diceCount: this.settings.diceCount,
             results: results,
             total: total,
-            timestamp: new Date().toLocaleString()
+            round: this.currentRound,
+            timestamp: new Date().toLocaleString('es-ES')
         };
         
         this.history.unshift(historyItem);
@@ -481,6 +667,7 @@ class PromptMaestro {
                         ${item.avatarEmoji}
                     </div>
                     <strong>${item.participant}</strong>
+                    <small>(Ronda ${item.round})</small>
                 </div>
                 <div class="history-dice">
                     ${item.results.map(result => `<span class="dice-result">${result}</span>`).join(' + ')}
@@ -493,7 +680,7 @@ class PromptMaestro {
     }
 
     clearHistory() {
-        if (confirm('¿Estás seguro de que quieres limpiar el historial?')) {
+        if (confirm('¿Estás seguro de que quieres limpiar todo el historial? Esta acción no se puede deshacer.')) {
             this.history = [];
             this.renderHistory();
             this.saveToStorage();
@@ -501,21 +688,15 @@ class PromptMaestro {
     }
 
     // Sistema de rondas y sesiones
-    nextRound() {
-        this.currentRound++;
-        this.currentParticipantIndex = 0;
-        this.updateUI();
-        this.saveToStorage();
-    }
-
     newSession() {
-        if (confirm('¿Iniciar una nueva sesión? Se reiniciarán los puntajes pero se mantendrán los participantes.')) {
+        if (confirm('¿Iniciar una nueva sesión? Se reiniciarán todos los puntajes y el historial, pero se mantendrán los participantes.')) {
             this.participants.forEach(participant => {
                 participant.score = 0;
                 participant.rounds = 0;
             });
-            this.currentRound = 0;
+            this.currentRound = 1;
             this.currentParticipantIndex = 0;
+            this.roundInProgress = false;
             this.history = [];
             this.totalSessions++;
             this.updateUI();
@@ -523,21 +704,25 @@ class PromptMaestro {
             this.updateLeaderboard();
             this.updateScoreVisualization();
             this.renderHistory();
+            this.updateCurrentPlayerDisplay();
             this.saveToStorage();
         }
     }
 
     resetGame() {
-        if (confirm('¿Reiniciar completamente el juego? Se perderán todos los datos.')) {
+        if (confirm('¿Reiniciar completamente el juego? Se perderán todos los datos incluyendo participantes e historial.')) {
             this.participants = [];
             this.history = [];
-            this.currentRound = 0;
+            this.currentRound = 1;
             this.currentParticipantIndex = 0;
+            this.roundInProgress = false;
+            this.totalSessions = 1;
             this.updateUI();
             this.renderParticipants();
             this.updateLeaderboard();
             this.updateScoreVisualization();
             this.renderHistory();
+            this.updateCurrentPlayerDisplay();
             this.saveToStorage();
         }
     }
@@ -551,7 +736,37 @@ class PromptMaestro {
         }
     }
 
-    // Sistema de configuración
+    // Sistema de configuración de dados
+    showDiceConfigModal() {
+        const modal = document.getElementById('dice-config-modal');
+        
+        // Cargar configuración actual en el modal
+        document.querySelector(`input[name="dice-type"][value="${this.settings.diceType}"]`).checked = true;
+        document.getElementById('dice-count').value = this.settings.diceCount;
+        document.getElementById('dice-count-display').textContent = this.settings.diceCount;
+        
+        modal.classList.add('active');
+    }
+
+    hideDiceConfigModal() {
+        document.getElementById('dice-config-modal').classList.remove('active');
+    }
+
+    saveDiceConfig() {
+        const selectedDiceType = document.querySelector('input[name="dice-type"]:checked');
+        const diceCount = parseInt(document.getElementById('dice-count').value);
+        
+        if (selectedDiceType) {
+            this.settings.diceType = selectedDiceType.value;
+        }
+        this.settings.diceCount = diceCount;
+        
+        this.hideDiceConfigModal();
+        this.updateUI();
+        this.saveToStorage();
+    }
+
+    // Sistema de configuración general
     showSettingsModal() {
         const modal = document.getElementById('settings-modal');
         
@@ -560,6 +775,7 @@ class PromptMaestro {
         document.getElementById('sound-toggle').checked = this.settings.soundEnabled;
         document.getElementById('target-score').value = this.settings.targetScore;
         document.getElementById('max-participants').value = this.settings.maxParticipants;
+        document.getElementById('rotate-turns').checked = this.settings.rotateTurns;
         
         // Configurar tema
         document.querySelectorAll('.theme-option').forEach(option => {
@@ -581,6 +797,7 @@ class PromptMaestro {
         this.settings.soundEnabled = document.getElementById('sound-toggle').checked;
         this.settings.targetScore = parseInt(document.getElementById('target-score').value);
         this.settings.maxParticipants = parseInt(document.getElementById('max-participants').value);
+        this.settings.rotateTurns = document.getElementById('rotate-turns').checked;
         
         // Aplicar tema
         const activeTheme = document.querySelector('.theme-option.active');
@@ -591,8 +808,10 @@ class PromptMaestro {
         
         // Ajustar participantes si es necesario
         if (this.participants.length > this.settings.maxParticipants) {
-            this.participants = this.participants.slice(0, this.settings.maxParticipants);
-            this.renderParticipants();
+            if (confirm(`El máximo de participantes se redujo a ${this.settings.maxParticipants}. ¿Eliminar los participantes excedentes?`)) {
+                this.participants = this.participants.slice(0, this.settings.maxParticipants);
+                this.renderParticipants();
+            }
         }
         
         this.hideSettingsModal();
@@ -603,9 +822,10 @@ class PromptMaestro {
     // Utilidades
     updateUI() {
         document.documentElement.setAttribute('data-theme', this.settings.theme);
+        document.getElementById('session-number').textContent = this.totalSessions;
+        document.getElementById('round-number').textContent = this.currentRound;
         document.getElementById('dice-count-display').textContent = this.settings.diceCount;
         document.getElementById('dice-count').value = this.settings.diceCount;
-        document.getElementById('dice-type').value = this.settings.diceType;
         document.getElementById('counter-type').value = this.settings.counterType;
     }
 
