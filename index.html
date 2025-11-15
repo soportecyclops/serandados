@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="light">
+<html lang="es" data-theme="classic-casino">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -224,10 +224,9 @@
                     </div>
 
                     <div class="setting-group">
-                        <h3>Tema</h3>
-                        <div class="theme-selector">
-                            <button class="theme-option active" data-theme="light">Claro</button>
-                            <button class="theme-option" data-theme="dark">Oscuro</button>
+                        <h3>Tema del Casino</h3>
+                        <div class="theme-grid" id="theme-grid">
+                            <!-- Los temas se cargarán dinámicamente -->
                         </div>
                     </div>
 
@@ -236,6 +235,7 @@
                         <label class="switch">
                             <input type="checkbox" id="sound-toggle" checked>
                             <span class="slider"></span>
+                            <span class="switch-label">Activar sonidos</span>
                         </label>
                     </div>
 
@@ -285,12 +285,12 @@
                     <div class="participant-details">
                         <div class="form-group">
                             <label for="participant-name">Nombre:</label>
-                            <input type="text" id="participant-name" placeholder="Ingresa el nombre">
+                            <input type="text" id="participant-name" placeholder="Ingresa el nombre" maxlength="20">
                         </div>
 
                         <div class="form-group">
                             <label for="participant-color">Color:</label>
-                            <input type="color" id="participant-color" value="#4f46e5">
+                            <input type="color" id="participant-color" value="#dc2626">
                         </div>
                     </div>
                 </div>
