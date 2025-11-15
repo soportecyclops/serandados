@@ -1,5 +1,5 @@
 // PROMPT MAESTRO - Aplicación Web de Dados
-// Archivo principal de JavaScript - Versión Casino
+// Archivo principal de JavaScript - Versión Corregida
 
 class PromptMaestro {
     constructor() {
@@ -13,7 +13,7 @@ class PromptMaestro {
         
         this.settings = {
             language: 'es',
-            theme: 'dark',
+            theme: 'classic-casino',
             soundEnabled: true,
             targetScore: 100,
             maxParticipants: 4,
@@ -29,10 +29,11 @@ class PromptMaestro {
     init() {
         this.loadFromStorage();
         this.setupEventListeners();
+        this.setupAvatars();
+        this.setupThemes();
         this.renderParticipants();
         this.updateLeaderboard();
         this.updateUI();
-        this.setupAvatars();
         this.updateCurrentPlayerDisplay();
         this.updateScoreVisualization();
         this.renderHistory();
@@ -46,7 +47,8 @@ class PromptMaestro {
             currentRound: this.currentRound,
             totalSessions: this.totalSessions,
             settings: this.settings,
-            currentParticipantIndex: this.currentParticipantIndex
+            currentParticipantIndex: this.currentParticipantIndex,
+            roundInProgress: this.roundInProgress
         };
         localStorage.setItem('promptMaestro', JSON.stringify(gameState));
     }
@@ -62,10 +64,22 @@ class PromptMaestro {
                 this.totalSessions = gameState.totalSessions || 1;
                 this.settings = { ...this.settings, ...gameState.settings };
                 this.currentParticipantIndex = gameState.currentParticipantIndex || 0;
+                this.roundInProgress = gameState.roundInProgress || false;
             } catch (e) {
                 console.error('Error loading saved game:', e);
+                // Si hay error, empezar nuevo juego
+                this.resetToDefault();
             }
         }
+    }
+
+    resetToDefault() {
+        this.participants = [];
+        this.history = [];
+        this.currentRound = 1;
+        this.totalSessions = 1;
+        this.currentParticipantIndex = 0;
+        this.roundInProgress = false;
     }
 
     // Configuración de event listeners
@@ -121,16 +135,37 @@ class PromptMaestro {
                 }
             });
         });
+
+        // Enter key en modales
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                if (document.getElementById('participant-modal').classList.contains('active')) {
+                    this.saveParticipant();
+                }
+                if (document.getElementById('settings-modal').classList.contains('active')) {
+                    this.saveSettings();
+                }
+                if (document.getElementById('dice-config-modal').classList.contains('active')) {
+                    this.saveDiceConfig();
+                }
+            }
+        });
     }
 
     // Sistema de dados
     rollDice() {
-        if (this.isRolling || this.participants.length === 0) return;
+        if (this.isRolling || this.participants.length === 0) {
+            if (this.participants.length === 0) {
+                alert('Agrega participantes antes de lanzar los dados.');
+            }
+            return;
+        }
 
         // Iniciar ronda si es el primer lanzamiento
         if (!this.roundInProgress) {
             this.roundInProgress = true;
             this.currentParticipantIndex = 0;
+            this.updateCurrentPlayerDisplay();
         }
 
         const participant = this.participants[this.currentParticipantIndex];
@@ -174,6 +209,7 @@ class PromptMaestro {
             this.renderParticipants();
             this.updateLeaderboard();
             this.updateScoreVisualization();
+            this.checkWinner();
 
             // Reproducir sonido si está habilitado
             if (this.settings.soundEnabled) {
@@ -205,7 +241,7 @@ class PromptMaestro {
             const diceFace = document.createElement('div');
             diceFace.className = 'dice-face';
             
-            // Agregar puntos placeholder durante la animación
+            // Agregar 9 puntos (para representar todas las posiciones)
             for (let j = 0; j < 9; j++) {
                 const dot = document.createElement('div');
                 dot.className = 'dot';
@@ -256,28 +292,52 @@ class PromptMaestro {
         // Limpiar puntos existentes
         diceFace.innerHTML = '';
         
-        // Configurar puntos según el valor
-        const dotPositions = {
-            1: [5], // Centro
-            2: [1, 9], // Esquinas opuestas
-            3: [1, 5, 9], // Diagonal
-            4: [1, 3, 7, 9], // Esquinas
-            5: [1, 3, 5, 7, 9], // Esquinas + centro
-            6: [1, 3, 4, 6, 7, 9], // Dos columnas
-            7: [1, 3, 4, 5, 6, 7, 9], // d6 + centro
-            8: [1, 2, 3, 4, 6, 7, 8, 9], // Todas menos centro
-            9: [1, 2, 3, 4, 5, 6, 7, 8, 9], // Todas
-            10: [1, 2, 3, 4, 5, 6, 7, 8, 9, 5] // Todas + centro duplicado (placeholder)
-        };
-
-        const positions = dotPositions[value] || dotPositions[6];
-        
-        for (let i = 1; i <= 9; i++) {
+        // Crear 9 puntos (para la cuadrícula 3x3)
+        for (let i = 0; i < 9; i++) {
             const dot = document.createElement('div');
             dot.className = 'dot';
-            if (positions.includes(i)) {
-                diceFace.appendChild(dot);
-            }
+            diceFace.appendChild(dot);
+        }
+
+        // Ocultar/mostrar puntos según el valor
+        const dots = diceFace.querySelectorAll('.dot');
+        dots.forEach(dot => dot.style.display = 'none');
+
+        // Mostrar los puntos correspondientes al valor
+        switch(value) {
+            case 1:
+                dots[4].style.display = 'block'; // Centro
+                break;
+            case 2:
+                dots[0].style.display = 'block'; // Esquina superior izquierda
+                dots[8].style.display = 'block'; // Esquina inferior derecha
+                break;
+            case 3:
+                dots[0].style.display = 'block'; // Esquina superior izquierda
+                dots[4].style.display = 'block'; // Centro
+                dots[8].style.display = 'block'; // Esquina inferior derecha
+                break;
+            case 4:
+                dots[0].style.display = 'block'; // Esquina superior izquierda
+                dots[2].style.display = 'block'; // Esquina superior derecha
+                dots[6].style.display = 'block'; // Esquina inferior izquierda
+                dots[8].style.display = 'block'; // Esquina inferior derecha
+                break;
+            case 5:
+                dots[0].style.display = 'block'; // Esquina superior izquierda
+                dots[2].style.display = 'block'; // Esquina superior derecha
+                dots[4].style.display = 'block'; // Centro
+                dots[6].style.display = 'block'; // Esquina inferior izquierda
+                dots[8].style.display = 'block'; // Esquina inferior derecha
+                break;
+            case 6:
+                dots[0].style.display = 'block'; // Esquina superior izquierda
+                dots[2].style.display = 'block'; // Esquina superior derecha
+                dots[3].style.display = 'block'; // Centro izquierda
+                dots[5].style.display = 'block'; // Centro derecha
+                dots[6].style.display = 'block'; // Esquina inferior izquierda
+                dots[8].style.display = 'block'; // Esquina inferior derecha
+                break;
         }
     }
 
@@ -308,21 +368,24 @@ class PromptMaestro {
             left: 50%;
             transform: translate(-50%, -50%);
             background: var(--bg-card);
-            color: var(--text-gold);
+            color: var(--text-accent);
             padding: var(--spacing-xl);
             border-radius: var(--border-radius-lg);
-            border: 3px solid var(--border-gold);
+            border: 3px solid var(--accent-gold);
             font-size: var(--font-size-2xl);
             font-weight: bold;
             z-index: 1001;
             box-shadow: var(--shadow-lg);
+            text-align: center;
         `;
         notification.textContent = `¡Ronda ${this.currentRound}!`;
         
         document.body.appendChild(notification);
         
         setTimeout(() => {
-            document.body.removeChild(notification);
+            if (document.body.contains(notification)) {
+                document.body.removeChild(notification);
+            }
         }, 2000);
     }
 
@@ -362,6 +425,42 @@ class PromptMaestro {
         });
     }
 
+    setupThemes() {
+        const themes = [
+            { id: 'classic-casino', name: 'Clásico Casino', primary: '#dc2626', secondary: '#059669', accent: '#d97706' },
+            { id: 'casino-royale', name: 'Casino Royale', primary: '#b91c1c', secondary: '#1e40af', accent: '#ca8a04' },
+            { id: 'green-professional', name: 'Verde Profesional', primary: '#065f46', secondary: '#7c3aed', accent: '#d97706' },
+            { id: 'purple-elegant', name: 'Púrpura Elegante', primary: '#7c3aed', secondary: '#dc2626', accent: '#f59e0b' },
+            { id: 'gold-luxe', name: 'Dorado Luxe', primary: '#d97706', secondary: '#dc2626', accent: '#fbbf24' },
+            { id: 'navy-blue', name: 'Azul Marino', primary: '#1e40af', secondary: '#dc2626', accent: '#d97706' }
+        ];
+
+        const themeGrid = document.getElementById('theme-grid');
+        themeGrid.innerHTML = '';
+
+        themes.forEach(theme => {
+            const themeOption = document.createElement('div');
+            themeOption.className = `theme-option ${theme.id === this.settings.theme ? 'active' : ''}`;
+            themeOption.dataset.themeId = theme.id;
+            
+            themeOption.innerHTML = `
+                <div class="theme-preview">
+                    <div class="theme-color primary" style="background-color: ${theme.primary}"></div>
+                    <div class="theme-color secondary" style="background-color: ${theme.secondary}"></div>
+                    <div class="theme-color accent" style="background-color: ${theme.accent}"></div>
+                </div>
+                <div class="theme-name">${theme.name}</div>
+            `;
+            
+            themeOption.addEventListener('click', () => {
+                document.querySelectorAll('.theme-option').forEach(opt => opt.classList.remove('active'));
+                themeOption.classList.add('active');
+            });
+
+            themeGrid.appendChild(themeOption);
+        });
+    }
+
     showParticipantModal(participant = null) {
         this.editingParticipant = participant;
         const modal = document.getElementById('participant-modal');
@@ -383,9 +482,20 @@ class PromptMaestro {
             document.getElementById('participant-name').value = '';
             document.getElementById('participant-color').value = '#dc2626';
             document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
+            
+            // Seleccionar primer avatar por defecto
+            const firstAvatar = document.querySelector('.avatar-option');
+            if (firstAvatar) {
+                firstAvatar.classList.add('selected');
+            }
         }
         
         modal.classList.add('active');
+        
+        // Focus en el campo de nombre
+        setTimeout(() => {
+            document.getElementById('participant-name').focus();
+        }, 100);
     }
 
     hideParticipantModal() {
@@ -394,12 +504,14 @@ class PromptMaestro {
     }
 
     saveParticipant() {
-        const name = document.getElementById('participant-name').value.trim();
+        const nameInput = document.getElementById('participant-name');
+        const name = nameInput.value.trim();
         const color = document.getElementById('participant-color').value;
         const selectedAvatar = document.querySelector('.avatar-option.selected');
         
         if (!name) {
             alert('Por favor ingresa un nombre para el participante');
+            nameInput.focus();
             return;
         }
         
@@ -472,14 +584,14 @@ class PromptMaestro {
         // Agregar event listeners para los botones de edición y eliminación
         document.querySelectorAll('.edit-participant').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const index = parseInt(e.target.dataset.index);
+                const index = parseInt(e.target.closest('button').dataset.index);
                 this.showParticipantModal(this.participants[index]);
             });
         });
 
         document.querySelectorAll('.remove-participant').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const index = parseInt(e.target.dataset.index);
+                const index = parseInt(e.target.closest('button').dataset.index);
                 this.removeParticipant(index);
             });
         });
@@ -489,9 +601,11 @@ class PromptMaestro {
         if (confirm('¿Estás seguro de que quieres eliminar este participante? Se perderán sus puntajes.')) {
             this.participants.splice(index, 1);
             if (this.currentParticipantIndex >= this.participants.length) {
-                this.currentParticipantIndex = 0;
+                this.currentParticipantIndex = Math.max(0, this.participants.length - 1);
             }
-            this.roundInProgress = false;
+            if (this.participants.length === 0) {
+                this.roundInProgress = false;
+            }
             this.renderParticipants();
             this.updateLeaderboard();
             this.updateScoreVisualization();
@@ -527,6 +641,17 @@ class PromptMaestro {
         
         leaderboardBody.innerHTML = '';
         
+        if (sortedParticipants.length === 0) {
+            leaderboardBody.innerHTML = `
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: var(--spacing-xl); color: var(--text-muted);">
+                        No hay participantes
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
         sortedParticipants.forEach((participant, index) => {
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -539,7 +664,7 @@ class PromptMaestro {
                         ${participant.name}
                     </div>
                 </td>
-                <td style="font-weight: 700; color: var(--text-gold);">${participant.score}</td>
+                <td style="font-weight: 700; color: var(--text-accent); font-size: var(--font-size-lg);">${participant.score}</td>
                 <td>${participant.rounds}</td>
             `;
             leaderboardBody.appendChild(row);
@@ -560,7 +685,6 @@ class PromptMaestro {
             counter.className = 'visual-counter';
             
             const score = participant.score;
-            const displayItems = this.getCounterDisplay(score);
             
             counter.innerHTML = `
                 <div class="counter-player">
@@ -570,7 +694,7 @@ class PromptMaestro {
                     <span>${participant.name}</span>
                 </div>
                 <div class="counter-display">
-                    <div class="counter-items">${displayItems}</div>
+                    <div class="counter-items">${this.getCounterDisplay(score)}</div>
                     <div class="counter-total">${score}</div>
                 </div>
             `;
@@ -579,54 +703,42 @@ class PromptMaestro {
     }
 
     getCounterDisplay(score) {
-        let displayHTML = '';
-        
-        switch (this.settings.counterType) {
-            case 'matches':
-                displayHTML = this.groupItems('🔥', score, 5);
-                break;
-            case 'sticks':
-                displayHTML = this.groupItems('│', score, 5);
-                break;
-            case 'stones':
-                displayHTML = this.groupItems('●', score, 5);
-                break;
-            case 'beans':
-                displayHTML = this.groupItems('🌰', score, 5);
-                break;
-            default:
-                displayHTML = `<span>${score}</span>`;
+        if (this.settings.counterType === 'numbers') {
+            return `<span>${score}</span>`;
         }
-        
-        return displayHTML;
-    }
 
-    groupItems(item, count, groupSize) {
-        if (count === 0) return '';
-        
-        let html = '';
-        const fullGroups = Math.floor(count / groupSize);
-        const remainder = count % groupSize;
-        
+        let itemChar = '';
+        switch(this.settings.counterType) {
+            case 'matches': itemChar = '🔥'; break;
+            case 'sticks': itemChar = '│'; break;
+            case 'stones': itemChar = '●'; break;
+            case 'beans': itemChar = '🌰'; break;
+            default: itemChar = '●';
+        }
+
+        let displayHTML = '';
+        const fullGroups = Math.floor(score / 5);
+        const remainder = score % 5;
+
         // Agrupar de 5 en 5
         for (let i = 0; i < fullGroups; i++) {
-            html += `<div class="counter-group">`;
-            for (let j = 0; j < groupSize; j++) {
-                html += `<span class="counter-item">${item}</span>`;
+            displayHTML += `<div class="counter-group">`;
+            for (let j = 0; j < 5; j++) {
+                displayHTML += `<span class="counter-item">${itemChar}</span>`;
             }
-            html += `</div>`;
+            displayHTML += `</div>`;
         }
-        
+
         // Resto
         if (remainder > 0) {
-            html += `<div class="counter-group">`;
+            displayHTML += `<div class="counter-group">`;
             for (let j = 0; j < remainder; j++) {
-                html += `<span class="counter-item">${item}</span>`;
+                displayHTML += `<span class="counter-item">${itemChar}</span>`;
             }
-            html += `</div>`;
+            displayHTML += `</div>`;
         }
-        
-        return html;
+
+        return displayHTML;
     }
 
     // Sistema de historial
@@ -689,6 +801,11 @@ class PromptMaestro {
 
     // Sistema de rondas y sesiones
     newSession() {
+        if (this.participants.length === 0) {
+            alert('Agrega participantes antes de iniciar una nueva sesión.');
+            return;
+        }
+
         if (confirm('¿Iniciar una nueva sesión? Se reiniciarán todos los puntajes y el historial, pero se mantendrán los participantes.')) {
             this.participants.forEach(participant => {
                 participant.score = 0;
@@ -706,6 +823,9 @@ class PromptMaestro {
             this.renderHistory();
             this.updateCurrentPlayerDisplay();
             this.saveToStorage();
+            
+            // Mostrar notificación
+            this.showNotification('¡Nueva sesión iniciada!');
         }
     }
 
@@ -724,7 +844,35 @@ class PromptMaestro {
             this.renderHistory();
             this.updateCurrentPlayerDisplay();
             this.saveToStorage();
+            
+            this.showNotification('Juego reiniciado');
         }
+    }
+
+    showNotification(message) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-card);
+            color: var(--text-accent);
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius);
+            border: 2px solid var(--accent-gold);
+            font-weight: 600;
+            z-index: 1001;
+            box-shadow: var(--shadow-lg);
+        `;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            if (document.body.contains(notification)) {
+                document.body.removeChild(notification);
+            }
+        }, 3000);
     }
 
     checkWinner() {
@@ -732,7 +880,11 @@ class PromptMaestro {
         if (winner) {
             setTimeout(() => {
                 alert(`🎉 ¡${winner.name} ha ganado el juego con ${winner.score} puntos!`);
-            }, 500);
+                // Opcional: reiniciar después de ganar
+                if (confirm('¿Quieres iniciar una nueva sesión?')) {
+                    this.newSession();
+                }
+            }, 1000);
         }
     }
 
@@ -741,7 +893,14 @@ class PromptMaestro {
         const modal = document.getElementById('dice-config-modal');
         
         // Cargar configuración actual en el modal
-        document.querySelector(`input[name="dice-type"][value="${this.settings.diceType}"]`).checked = true;
+        const currentTypeRadio = document.querySelector(`input[name="dice-type"][value="${this.settings.diceType}"]`);
+        if (currentTypeRadio) {
+            currentTypeRadio.checked = true;
+        } else {
+            // Si no existe, seleccionar d6 por defecto
+            document.querySelector('input[name="dice-type"][value="d6"]').checked = true;
+        }
+        
         document.getElementById('dice-count').value = this.settings.diceCount;
         document.getElementById('dice-count-display').textContent = this.settings.diceCount;
         
@@ -764,6 +923,7 @@ class PromptMaestro {
         this.hideDiceConfigModal();
         this.updateUI();
         this.saveToStorage();
+        this.showNotification('Configuración de dados actualizada');
     }
 
     // Sistema de configuración general
@@ -777,10 +937,10 @@ class PromptMaestro {
         document.getElementById('max-participants').value = this.settings.maxParticipants;
         document.getElementById('rotate-turns').checked = this.settings.rotateTurns;
         
-        // Configurar tema
+        // Configurar tema actual
         document.querySelectorAll('.theme-option').forEach(option => {
             option.classList.remove('active');
-            if (option.dataset.theme === this.settings.theme) {
+            if (option.dataset.themeId === this.settings.theme) {
                 option.classList.add('active');
             }
         });
@@ -802,7 +962,7 @@ class PromptMaestro {
         // Aplicar tema
         const activeTheme = document.querySelector('.theme-option.active');
         if (activeTheme) {
-            this.settings.theme = activeTheme.dataset.theme;
+            this.settings.theme = activeTheme.dataset.themeId;
             document.documentElement.setAttribute('data-theme', this.settings.theme);
         }
         
@@ -810,6 +970,9 @@ class PromptMaestro {
         if (this.participants.length > this.settings.maxParticipants) {
             if (confirm(`El máximo de participantes se redujo a ${this.settings.maxParticipants}. ¿Eliminar los participantes excedentes?`)) {
                 this.participants = this.participants.slice(0, this.settings.maxParticipants);
+                if (this.currentParticipantIndex >= this.participants.length) {
+                    this.currentParticipantIndex = Math.max(0, this.participants.length - 1);
+                }
                 this.renderParticipants();
             }
         }
@@ -817,6 +980,7 @@ class PromptMaestro {
         this.hideSettingsModal();
         this.saveToStorage();
         this.updateUI();
+        this.showNotification('Configuración guardada');
     }
 
     // Utilidades
@@ -827,6 +991,14 @@ class PromptMaestro {
         document.getElementById('dice-count-display').textContent = this.settings.diceCount;
         document.getElementById('dice-count').value = this.settings.diceCount;
         document.getElementById('counter-type').value = this.settings.counterType;
+        
+        // Actualizar estado del botón de lanzar
+        const rollBtn = document.getElementById('roll-btn');
+        if (this.participants.length === 0 || this.isRolling) {
+            rollBtn.disabled = true;
+        } else {
+            rollBtn.disabled = false;
+        }
     }
 
     toggleFullscreen() {
@@ -842,36 +1014,30 @@ class PromptMaestro {
     }
 
     playDiceSound() {
-        // Placeholder para sonido - se implementará con archivos de sonido reales
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
-        oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.1);
-        
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.2);
+        // Implementación básica de sonido
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.1);
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.2);
+        } catch (e) {
+            console.log('Audio no disponible');
+        }
     }
 }
 
 // Inicializar la aplicación cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
     window.promptMaestro = new PromptMaestro();
-});
-
-// Event listeners para los selectores de tema
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.theme-option').forEach(option => {
-        option.addEventListener('click', (e) => {
-            document.querySelectorAll('.theme-option').forEach(opt => opt.classList.remove('active'));
-            e.target.classList.add('active');
-        });
-    });
 });
