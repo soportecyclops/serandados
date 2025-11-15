@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Maestro - Juego de Dados Profesional</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="app-title">🎲 Prompt Maestro</h1>
+                <div class="header-controls">
+                    <button id="fullscreen-btn" class="btn-icon" title="Pantalla completa">
+                        <span class="icon-fullscreen"></span>
+                    </button>
+                    <button id="settings-btn" class="btn-icon" title="Configuración">
+                        <span class="icon-settings"></span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Panel de Control -->
+            <section class="control-panel">
+                <div class="dice-controls">
+                    <h2>Configuración de Dados</h2>
+                    <div class="dice-type-selector">
+                        <label for="dice-type">Tipo de Dado:</label>
+                        <select id="dice-type">
+                            <option value="d4">d4</option>
+                            <option value="d6" selected>d6</option>
+                            <option value="d8">d8</option>
+                            <option value="d10">d10</option>
+                            <option value="d20">d20</option>
+                        </select>
+                    </div>
+                    <div class="dice-quantity">
+                        <label for="dice-count">Cantidad:</label>
+                        <input type="range" id="dice-count" min="1" max="12" value="2">
+                        <span id="dice-count-display">2</span>
+                    </div>
+                    <button id="roll-btn" class="btn-primary">🎯 Lanzar Dados</button>
+                </div>
+
+                <div class="game-controls">
+                    <h2>Controles del Juego</h2>
+                    <button id="new-session-btn" class="btn-secondary">Nueva Sesión</button>
+                    <button id="next-round-btn" class="btn-secondary">Siguiente Ronda</button>
+                    <button id="reset-btn" class="btn-outline">Reiniciar</button>
+                </div>
+            </section>
+
+            <!-- Área de Resultados -->
+            <section class="results-area">
+                <div class="dice-display" id="dice-display">
+                    <!-- Los dados aparecerán aquí dinámicamente -->
+                    <div class="dice-placeholder">
+                        <p>Lanza los dados para comenzar</p>
+                    </div>
+                </div>
+                
+                <div class="roll-results">
+                    <h3>Resultado Actual</h3>
+                    <div id="current-result" class="current-result">
+                        <span class="total-score">-</span>
+                        <div class="individual-dice" id="individual-dice"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Panel de Participantes -->
+            <section class="participants-panel">
+                <div class="panel-header">
+                    <h2>Participantes</h2>
+                    <button id="add-participant-btn" class="btn-icon-small">+</button>
+                </div>
+                
+                <div class="participants-list" id="participants-list">
+                    <!-- Los participantes se agregarán dinámicamente -->
+                    <div class="empty-state">
+                        <p>No hay participantes. Agrega el primero.</p>
+                    </div>
+                </div>
+
+                <div class="score-visualization">
+                    <h3>Tanteador Visual</h3>
+                    <div class="counter-type-selector">
+                        <select id="counter-type">
+                            <option value="numbers">Números</option>
+                            <option value="matches">Fósforos</option>
+                            <option value="sticks">Palitos</option>
+                            <option value="stones">Piedras</option>
+                            <option value="beans">Porotos</option>
+                        </select>
+                    </div>
+                    <div class="score-display" id="score-display">
+                        <!-- Los contadores visuales se mostrarán aquí -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tabla de Posiciones -->
+            <section class="leaderboard">
+                <h2>Tabla de Posiciones</h2>
+                <div class="leaderboard-content">
+                    <table id="leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th>Pos.</th>
+                                <th>Participante</th>
+                                <th>Puntaje</th>
+                                <th>Rondas</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body">
+                            <!-- Las filas se generarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Historial -->
+            <section class="history-panel">
+                <div class="panel-header">
+                    <h2>Historial de Tiradas</h2>
+                    <button id="clear-history-btn" class="btn-outline">Limpiar</button>
+                </div>
+                <div class="history-list" id="history-list">
+                    <!-- El historial se mostrará aquí -->
+                    <div class="empty-state">
+                        <p>No hay historial de tiradas aún.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Modal de Configuración -->
+        <div id="settings-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Configuración</h2>
+                    <button id="close-settings" class="btn-icon">&times;</button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="setting-group">
+                        <h3>Idioma</h3>
+                        <select id="language-select">
+                            <option value="es">Español</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-group">
+                        <h3>Tema</h3>
+                        <div class="theme-selector">
+                            <button class="theme-option active" data-theme="light">Claro</button>
+                            <button class="theme-option" data-theme="dark">Oscuro</button>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <h3>Sonidos</h3>
+                        <label class="switch">
+                            <input type="checkbox" id="sound-toggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-group">
+                        <h3>Puntaje Objetivo</h3>
+                        <input type="number" id="target-score" min="10" max="1000" value="100">
+                    </div>
+
+                    <div class="setting-group">
+                        <h3>Máximo de Participantes</h3>
+                        <input type="number" id="max-participants" min="2" max="10" value="4">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button id="save-settings" class="btn-primary">Guardar</button>
+                    <button id="cancel-settings" class="btn-outline">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Participante -->
+        <div id="participant-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="participant-modal-title">Agregar Participante</h2>
+                    <button id="close-participant-modal" class="btn-icon">&times;</button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="avatar-selection">
+                        <h3>Seleccionar Avatar</h3>
+                        <div class="avatar-grid" id="avatar-grid">
+                            <!-- Los avatares se cargarán dinámicamente -->
+                        </div>
+                    </div>
+
+                    <div class="participant-details">
+                        <div class="form-group">
+                            <label for="participant-name">Nombre:</label>
+                            <input type="text" id="participant-name" placeholder="Ingresa el nombre">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="participant-color">Color:</label>
+                            <input type="color" id="participant-color" value="#4f46e5">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button id="save-participant" class="btn-primary">Guardar</button>
+                    <button id="cancel-participant" class="btn-outline">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+/project-root
+│
+├── index.html
+├── style.css
+├── app.js
+│
+├── /img
+│   ├── /avatars
+│   └── /dice
+│
+└── /sounds
