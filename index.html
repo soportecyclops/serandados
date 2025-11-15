@@ -225,52 +225,55 @@
         </div>
 
         <!-- Modal de Tema e Idioma -->
-        <div id="theme-language-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Tema e Idioma</h2>
-                    <button id="close-theme-language" class="btn-icon">&times;</button>
-                </div>
-                
-                <div class="modal-body">
-                    <div class="setting-group">
-                        <h3>Idioma</h3>
-                        <select id="language-select">
-                            <option value="es">Español</option>
-                            <option value="en">English</option>
-                        </select>
-                    </div>
+       <div class="modal-body">
+    <div class="setting-group">
+        <h3>Idioma</h3>
+        <select id="language-select">
+            <option value="es">Español</option>
+            <option value="en">English</option>
+        </select>
+    </div>
 
-                    <div class="setting-group">
-                        <h3>Tema del Casino</h3>
-                        <div class="theme-grid" id="theme-grid">
-                            <!-- Los temas se cargarán dinámicamente -->
-                        </div>
-                    </div>
+    <div class="setting-group">
+        <h3>Tema del Casino</h3>
+        <div class="theme-grid" id="theme-grid">
+            <!-- Los temas se cargarán dinámicamente -->
+        </div>
+    </div>
 
-                    <div class="setting-group">
-                        <h3>Sonidos</h3>
-                        <label class="switch">
-                            <input type="checkbox" id="sound-toggle" checked>
-                            <span class="slider"></span>
-                            <span class="switch-label">Activar sonidos</span>
-                        </label>
-                    </div>
+    <!-- NUEVO: Modo de Juego -->
+    <div class="setting-group">
+        <h3>Modo de Juego</h3>
+        <select id="game-mode">
+            <!-- Las opciones se cargarán dinámicamente -->
+        </select>
+        <div id="game-mode-description" class="game-mode-description"></div>
+        <div id="game-mode-rules" class="game-mode-rules"></div>
+    </div>
 
-                    <div class="setting-group">
-                        <h3>Puntaje Objetivo</h3>
-                        <input type="number" id="target-score" min="10" max="1000" value="100">
-                    </div>
+    <div class="setting-group">
+        <h3>Puntaje Objetivo</h3>
+        <input type="number" id="target-score" min="10" max="1000" value="100">
+    </div>
 
-                    <div class="setting-group">
-                        <h3>Rotación de Turnos</h3>
-                        <label class="switch">
-                            <input type="checkbox" id="rotate-turns">
-                            <span class="slider"></span>
-                            <span class="switch-label">Rotar orden cada ronda</span>
-                        </label>
-                    </div>
-                </div>
+    <div class="setting-group">
+        <h3>Sonidos</h3>
+        <label class="switch">
+            <input type="checkbox" id="sound-toggle" checked>
+            <span class="slider"></span>
+            <span class="switch-label">Activar sonidos</span>
+        </label>
+    </div>
+
+    <div class="setting-group">
+        <h3>Rotación de Turnos</h3>
+        <label class="switch">
+            <input type="checkbox" id="rotate-turns">
+            <span class="slider"></span>
+            <span class="switch-label">Rotar orden cada ronda</span>
+        </label>
+    </div>
+</div>
 
                 <div class="modal-footer">
                     <button id="save-theme-language" class="btn-primary">Guardar</button>
