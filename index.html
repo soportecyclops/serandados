@@ -16,11 +16,14 @@
             <div class="header-content">
                 <h1 class="app-title">🎲 Prompt Maestro</h1>
                 <div class="header-controls">
+                    <button id="dice-config-btn" class="btn-icon" title="Configuración de Dados">
+                        <span class="icon-dice">🎯</span>
+                    </button>
                     <button id="fullscreen-btn" class="btn-icon" title="Pantalla completa">
-                        <span class="icon-fullscreen"></span>
+                        <span class="icon-fullscreen">⛶</span>
                     </button>
                     <button id="settings-btn" class="btn-icon" title="Configuración">
-                        <span class="icon-settings"></span>
+                        <span class="icon-settings">⚙️</span>
                     </button>
                 </div>
             </div>
@@ -30,31 +33,32 @@
         <main class="main-content">
             <!-- Panel de Control -->
             <section class="control-panel">
-                <div class="dice-controls">
-                    <h2>Configuración de Dados</h2>
-                    <div class="dice-type-selector">
-                        <label for="dice-type">Tipo de Dado:</label>
-                        <select id="dice-type">
-                            <option value="d4">d4</option>
-                            <option value="d6" selected>d6</option>
-                            <option value="d8">d8</option>
-                            <option value="d10">d10</option>
-                            <option value="d20">d20</option>
-                        </select>
+                <div class="game-info">
+                    <div class="session-counter">
+                        <span class="session-label">Sesión #</span>
+                        <span id="session-number" class="session-number">1</span>
                     </div>
-                    <div class="dice-quantity">
-                        <label for="dice-count">Cantidad:</label>
-                        <input type="range" id="dice-count" min="1" max="12" value="2">
-                        <span id="dice-count-display">2</span>
+                    <div class="round-counter">
+                        <span class="round-label">Ronda</span>
+                        <span id="round-number" class="round-number">1</span>
                     </div>
-                    <button id="roll-btn" class="btn-primary">🎯 Lanzar Dados</button>
                 </div>
 
                 <div class="game-controls">
                     <h2>Controles del Juego</h2>
-                    <button id="new-session-btn" class="btn-secondary">Nueva Sesión</button>
-                    <button id="next-round-btn" class="btn-secondary">Siguiente Ronda</button>
-                    <button id="reset-btn" class="btn-outline">Reiniciar</button>
+                    <button id="roll-btn" class="btn-primary">🎯 Lanzar Dados</button>
+                    <div class="control-buttons">
+                        <button id="new-session-btn" class="btn-secondary">Nueva Sesión</button>
+                        <button id="reset-btn" class="btn-outline">Reiniciar Todo</button>
+                    </div>
+                </div>
+
+                <div class="current-player">
+                    <h3>Turno Actual</h3>
+                    <div id="current-player-display" class="player-display">
+                        <div class="player-avatar" style="background-color: #4f46e5;">👤</div>
+                        <span class="player-name">Esperando jugadores...</span>
+                    </div>
                 </div>
             </section>
 
@@ -89,21 +93,22 @@
                         <p>No hay participantes. Agrega el primero.</p>
                     </div>
                 </div>
+            </section>
 
-                <div class="score-visualization">
-                    <h3>Tanteador Visual</h3>
-                    <div class="counter-type-selector">
-                        <select id="counter-type">
-                            <option value="numbers">Números</option>
-                            <option value="matches">Fósforos</option>
-                            <option value="sticks">Palitos</option>
-                            <option value="stones">Piedras</option>
-                            <option value="beans">Porotos</option>
-                        </select>
-                    </div>
-                    <div class="score-display" id="score-display">
-                        <!-- Los contadores visuales se mostrarán aquí -->
-                    </div>
+            <!-- Tanteador Visual -->
+            <section class="score-panel">
+                <div class="panel-header">
+                    <h2>Tanteador Visual</h2>
+                    <select id="counter-type" class="counter-select">
+                        <option value="numbers">Números</option>
+                        <option value="matches">Fósforos</option>
+                        <option value="sticks">Palitos</option>
+                        <option value="stones">Piedras</option>
+                        <option value="beans">Porotos</option>
+                    </select>
+                </div>
+                <div class="score-display" id="score-display">
+                    <!-- Los contadores visuales se mostrarán aquí -->
                 </div>
             </section>
 
@@ -142,11 +147,70 @@
             </section>
         </main>
 
-        <!-- Modal de Configuración -->
+        <!-- Modal de Configuración de Dados -->
+        <div id="dice-config-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Configuración de Dados</h2>
+                    <button id="close-dice-config" class="btn-icon">&times;</button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="setting-group">
+                        <h3>Tipo de Dado</h3>
+                        <div class="dice-type-grid">
+                            <label class="dice-type-option">
+                                <input type="radio" name="dice-type" value="d4">
+                                <div class="dice-preview">d4</div>
+                                <span>4 caras</span>
+                            </label>
+                            <label class="dice-type-option">
+                                <input type="radio" name="dice-type" value="d6" checked>
+                                <div class="dice-preview">d6</div>
+                                <span>6 caras</span>
+                            </label>
+                            <label class="dice-type-option">
+                                <input type="radio" name="dice-type" value="d8">
+                                <div class="dice-preview">d8</div>
+                                <span>8 caras</span>
+                            </label>
+                            <label class="dice-type-option">
+                                <input type="radio" name="dice-type" value="d10">
+                                <div class="dice-preview">d10</div>
+                                <span>10 caras</span>
+                            </label>
+                            <label class="dice-type-option">
+                                <input type="radio" name="dice-type" value="d20">
+                                <div class="dice-preview">d20</div>
+                                <span>20 caras</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <h3>Cantidad de Dados</h3>
+                        <div class="dice-quantity-control">
+                            <input type="range" id="dice-count" min="1" max="12" value="2">
+                            <div class="quantity-display">
+                                <span id="dice-count-display">2</span>
+                                <span>dados</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button id="save-dice-config" class="btn-primary">Aplicar</button>
+                    <button id="cancel-dice-config" class="btn-outline">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Configuración General -->
         <div id="settings-modal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>Configuración</h2>
+                    <h2>Configuración General</h2>
                     <button id="close-settings" class="btn-icon">&times;</button>
                 </div>
                 
@@ -183,6 +247,15 @@
                     <div class="setting-group">
                         <h3>Máximo de Participantes</h3>
                         <input type="number" id="max-participants" min="2" max="10" value="4">
+                    </div>
+
+                    <div class="setting-group">
+                        <h3>Rotación de Turnos</h3>
+                        <label class="switch">
+                            <input type="checkbox" id="rotate-turns">
+                            <span class="slider"></span>
+                            <span class="switch-label">Rotar orden cada ronda</span>
+                        </label>
                     </div>
                 </div>
 
