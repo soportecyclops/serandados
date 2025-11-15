@@ -12,6 +12,7 @@ class DiceMasterPro {
         this.currentParticipantIndex = 0;
         this.isRolling = false;
         this.roundInProgress = false;
+        this.sessionStarted = false; // NUEVO: Controla si la sesión ha comenzado
         
         this.settings = {
             language: 'es',
@@ -99,7 +100,8 @@ class DiceMasterPro {
             totalSessions: this.totalSessions,
             settings: this.settings,
             currentParticipantIndex: this.currentParticipantIndex,
-            roundInProgress: this.roundInProgress
+            roundInProgress: this.roundInProgress,
+            sessionStarted: this.sessionStarted // NUEVO: Guardar estado de sesión
         };
         localStorage.setItem('diceMasterPro', JSON.stringify(gameState));
     }
@@ -117,6 +119,7 @@ class DiceMasterPro {
                 this.settings = { ...this.settings, ...gameState.settings };
                 this.currentParticipantIndex = gameState.currentParticipantIndex || 0;
                 this.roundInProgress = gameState.roundInProgress || false;
+                this.sessionStarted = gameState.sessionStarted || false; // NUEVO: Cargar estado de sesión
                 
                 // Asegurar que maxRounds existe
                 if (typeof this.settings.maxRounds === 'undefined') {
@@ -232,13 +235,19 @@ class DiceMasterPro {
     updateDeleteButtonVisibility() {
         const removeBtn = document.getElementById('remove-participant-btn');
         if (removeBtn) {
-            if (this.selectedParticipants.length > 0) {
+            if (this.selectedParticipants.length > 0 && !this.sessionStarted) {
                 removeBtn.style.display = 'flex';
                 removeBtn.textContent = `🗑️ (${this.selectedParticipants.length})`;
             } else {
                 removeBtn.style.display = 'none';
             }
         }
+    }
+
+    // NUEVO: Verificar si un participante puede ser editado
+    canEditParticipant(participant) {
+        // Solo se puede editar si la sesión no ha comenzado O si el participante no ha tirado dados
+        return !this.sessionStarted || participant.rounds === 0;
     }
 
     // NUEVO: Eliminar participantes seleccionados
@@ -248,8 +257,14 @@ class DiceMasterPro {
             return;
         }
 
+        // Verificar si la sesión ya comenzó
+        if (this.sessionStarted) {
+            this.showNotification('No se pueden eliminar participantes una vez iniciada la sesión');
+            return;
+        }
+
         const count = this.selectedParticipants.length;
-        if (confirm(`¿Eliminar ${count} participante${count > 1 ? 's' : ''} seleccionado${count > 1 ? 's' : ''}? Se reiniciará la sesión actual.`)) {
+        if (confirm(`¿Eliminar ${count} participante${count > 1 ? 's' : ''} seleccionado${count > 1 ? 's' : ''}?`)) {
             // Filtrar participantes para mantener solo los no seleccionados
             this.participants = this.participants.filter(p => 
                 !this.selectedParticipants.includes(p.id)
@@ -257,9 +272,6 @@ class DiceMasterPro {
             
             // Limpiar selección
             this.selectedParticipants = [];
-            
-            // Reiniciar sesión
-            this.resetSession();
             
             this.renderParticipants();
             this.updateLeaderboard();
@@ -281,6 +293,7 @@ class DiceMasterPro {
         this.currentRound = 1;
         this.currentParticipantIndex = 0;
         this.roundInProgress = false;
+        this.sessionStarted = false; // NUEVO: Reiniciar estado de sesión
         this.history = [];
         this.renderHistory();
         this.updateUI();
@@ -293,6 +306,12 @@ class DiceMasterPro {
                 this.showNotification('Agrega participantes antes de lanzar los dados.');
             }
             return;
+        }
+
+        // NUEVO: Marcar que la sesión ha comenzado al primer lanzamiento
+        if (!this.sessionStarted) {
+            this.sessionStarted = true;
+            this.showNotification('¡Sesión iniciada! Ronda 1 en progreso.');
         }
 
         if (!this.roundInProgress) {
@@ -673,6 +692,12 @@ class DiceMasterPro {
 
     // Modales CORREGIDOS
     showParticipantModal(participant = null) {
+        // NUEVO: Verificar si se puede editar
+        if (participant && !this.canEditParticipant(participant)) {
+            this.showNotification('No se puede editar este participante durante la sesión activa');
+            return;
+        }
+
         this.editingParticipant = participant;
         const modal = document.getElementById('participant-modal');
         const title = document.getElementById('participant-modal-title');
@@ -689,6 +714,12 @@ class DiceMasterPro {
                 avatarOption.classList.add('selected');
             }
         } else {
+            // NUEVO: Verificar si se puede agregar participantes durante sesión activa
+            if (this.sessionStarted) {
+                this.showNotification('No se pueden agregar participantes durante una sesión activa');
+                return;
+            }
+            
             title.textContent = 'Agregar Participante';
             document.getElementById('participant-name').value = '';
             document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
@@ -730,11 +761,23 @@ class DiceMasterPro {
         }
 
         if (this.editingParticipant) {
+            // NUEVO: Verificar si se puede editar
+            if (!this.canEditParticipant(this.editingParticipant)) {
+                this.showNotification('No se puede editar este participante durante la sesión activa');
+                return;
+            }
+            
             this.editingParticipant.name = name;
             this.editingParticipant.avatar = selectedAvatar.dataset.avatarId;
             this.editingParticipant.avatarEmoji = selectedAvatar.dataset.avatarEmoji;
             this.editingParticipant.color = selectedAvatar.dataset.avatarColor;
         } else {
+            // NUEVO: Verificar si se puede agregar participantes durante sesión activa
+            if (this.sessionStarted) {
+                this.showNotification('No se pueden agregar participantes durante una sesión activa');
+                return;
+            }
+            
             if (this.participants.length >= this.settings.maxParticipants) {
                 this.showNotification(`Máximo ${this.settings.maxParticipants} participantes permitidos`);
                 return;
@@ -873,10 +916,16 @@ class DiceMasterPro {
         this.participants.forEach((participant, index) => {
             const isCurrentTurn = this.roundInProgress && index === this.currentParticipantIndex;
             const isSelected = this.selectedParticipants.includes(participant.id);
+            const canEdit = this.canEditParticipant(participant); // NUEVO: Verificar si se puede editar
             
             const participantElement = document.createElement('div');
             participantElement.className = `participant-item ${isCurrentTurn ? 'current-turn' : ''} ${isSelected ? 'selected' : ''}`;
             participantElement.dataset.participantId = participant.id;
+            
+            // NUEVO: Mostrar botón de edición solo si se puede editar
+            const editButton = canEdit ? 
+                `<button class="btn-icon-small edit-participant" data-index="${index}">✏️</button>` : 
+                `<button class="btn-icon-small" disabled title="No se puede editar durante la sesión">🔒</button>`;
             
             participantElement.innerHTML = `
                 <div class="participant-avatar" style="background-color: ${participant.color}">
@@ -887,7 +936,7 @@ class DiceMasterPro {
                     <div class="participant-score">Puntaje: ${participant.score} | Rondas: ${participant.rounds}</div>
                 </div>
                 <div class="participant-actions">
-                    <button class="btn-icon-small edit-participant" data-index="${index}">✏️</button>
+                    ${editButton}
                 </div>
             `;
             participantsList.appendChild(participantElement);
@@ -897,12 +946,17 @@ class DiceMasterPro {
         document.querySelectorAll('.participant-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 // Evitar selección al hacer clic en botones de edición
-                if (e.target.closest('.edit-participant')) {
+                if (e.target.closest('.edit-participant') || e.target.closest('.btn-icon-small[disabled]')) {
                     return;
                 }
                 
                 const participantId = item.dataset.participantId;
-                this.toggleParticipantSelection(participantId);
+                const participant = this.participants.find(p => p.id === participantId);
+                
+                // NUEVO: Solo permitir selección si se puede editar
+                if (participant && this.canEditParticipant(participant)) {
+                    this.toggleParticipantSelection(participantId);
+                }
             });
         });
 
@@ -1119,30 +1173,23 @@ class DiceMasterPro {
         if (rollBtn) {
             rollBtn.disabled = this.participants.length === 0 || this.isRolling;
         }
+
+        // NUEVO: Actualizar botón de agregar participante
+        const addParticipantBtn = document.getElementById('add-participant-btn');
+        if (addParticipantBtn) {
+            if (this.sessionStarted) {
+                addParticipantBtn.disabled = true;
+                addParticipantBtn.title = 'No se pueden agregar participantes durante la sesión';
+            } else {
+                addParticipantBtn.disabled = false;
+                addParticipantBtn.title = 'Agregar participante';
+            }
+        }
     }
 
     setElementText(id, text) {
         const element = document.getElementById(id);
         if (element) element.textContent = text;
-    }
-
-    // ... (otros métodos como removeParticipant, removeLastParticipant, etc.)
-
-    removeParticipant(index) {
-        if (confirm('¿Estás seguro de que quieres eliminar este participante? Se perderán sus puntajes.')) {
-            this.participants.splice(index, 1);
-            if (this.currentParticipantIndex >= this.participants.length) {
-                this.currentParticipantIndex = Math.max(0, this.participants.length - 1);
-            }
-            if (this.participants.length === 0) {
-                this.roundInProgress = false;
-            }
-            this.renderParticipants();
-            this.updateLeaderboard();
-            this.updateScoreVisualization();
-            this.updateCurrentPlayerDisplay();
-            this.saveToStorage();
-        }
     }
 
     endRound() {
@@ -1336,6 +1383,7 @@ class DiceMasterPro {
             this.currentRound = 1;
             this.currentParticipantIndex = 0;
             this.roundInProgress = false;
+            this.sessionStarted = false; // NUEVO: Reiniciar estado de sesión
             this.history = [];
             this.totalSessions++;
             this.updateUI();
@@ -1359,6 +1407,7 @@ class DiceMasterPro {
             this.currentRound = 1;
             this.currentParticipantIndex = 0;
             this.roundInProgress = false;
+            this.sessionStarted = false; // NUEVO: Reiniciar estado de sesión
             this.totalSessions = 1;
             this.updateUI();
             this.renderParticipants();
@@ -1480,6 +1529,7 @@ class DiceMasterPro {
         this.totalSessions = 1;
         this.currentParticipantIndex = 0;
         this.roundInProgress = false;
+        this.sessionStarted = false; // NUEVO: Reiniciar estado de sesión
     }
 }
 
