@@ -705,6 +705,7 @@ body {
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
     transition: all var(--transition-fast);
+    cursor: pointer;
 }
 
 .participant-item:hover {
@@ -716,6 +717,16 @@ body {
     border-color: var(--text-accent);
     background: rgba(251, 191, 36, 0.1);
     box-shadow: var(--shadow-gold);
+}
+
+.participant-item.selected {
+    background: rgba(59, 130, 246, 0.2) !important;
+    border-color: #3b82f6 !important;
+    transform: scale(1.02);
+}
+
+.participant-item.selected .participant-avatar {
+    border-color: #3b82f6;
 }
 
 .participant-avatar {
@@ -1340,6 +1351,7 @@ input:checked + .slider:before {
     font-style: italic;
     font-size: var(--font-size-base);
 }
+
 /* Estilos para modos de juego */
 .game-mode-description {
     font-size: 0.875rem;
@@ -1383,6 +1395,7 @@ input:checked + .slider:before {
     margin-bottom: var(--spacing-sm);
     font-size: var(--font-size-base);
 }
+
 /* Responsive */
 @media (max-width: 1200px) {
     .main-content {
