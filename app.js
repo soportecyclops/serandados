@@ -4,6 +4,7 @@
 class DiceMasterPro {
     constructor() {
         this.participants = [];
+        this.selectedParticipants = []; // Nuevo: participantes seleccionados
         this.history = [];
         this.sessionsHistory = [];
         this.currentRound = 1;
@@ -22,7 +23,8 @@ class DiceMasterPro {
             diceCount: 2,
             counterType: 'numbers',
             rotateTurns: false,
-            gameMode: 'classic' // Nuevo: modos de juego
+            gameMode: 'classic', // Nuevo: modos de juego
+            maxRounds: 0 // Nuevo: máximo de rondas por sesión (0 = infinito)
         };
         
         this.gameModes = {
@@ -77,6 +79,7 @@ class DiceMasterPro {
         this.setupAvatars();
         this.setupThemes();
         this.setupGameModes();
+        this.setupParticipantSelection(); // Nuevo: configuración de selección
         this.renderParticipants();
         this.updateLeaderboard();
         this.updateUI();
@@ -114,6 +117,11 @@ class DiceMasterPro {
                 this.settings = { ...this.settings, ...gameState.settings };
                 this.currentParticipantIndex = gameState.currentParticipantIndex || 0;
                 this.roundInProgress = gameState.roundInProgress || false;
+                
+                // Asegurar que maxRounds existe
+                if (typeof this.settings.maxRounds === 'undefined') {
+                    this.settings.maxRounds = 0;
+                }
             } catch (e) {
                 console.error('Error loading saved game:', e);
                 this.resetToDefault();
@@ -136,9 +144,9 @@ class DiceMasterPro {
         this.setupButton('save-dice-config', () => this.saveDiceConfig());
         this.setupButton('cancel-dice-config', () => this.hideDiceConfigModal());
 
-        // Configuración de participantes
+        // Configuración de participantes - CORREGIDO
         this.setupButton('add-participant-btn', () => this.showParticipantModal());
-        this.setupButton('remove-participant-btn', () => this.removeLastParticipant());
+        this.setupButton('remove-participant-btn', () => this.removeSelectedParticipants());
 
         // Tema e idioma - CORREGIDO
         this.setupButton('theme-language-btn', () => this.showThemeLanguageModal());
@@ -213,6 +221,69 @@ class DiceMasterPro {
         } else {
             console.warn(`Elemento con ID '${id}' no encontrado`);
         }
+    }
+
+    // NUEVO: Sistema de selección de participantes
+    setupParticipantSelection() {
+        // Este método se llama desde renderParticipants para conectar los event listeners
+    }
+
+    // NUEVO: Actualizar visibilidad del botón eliminar
+    updateDeleteButtonVisibility() {
+        const removeBtn = document.getElementById('remove-participant-btn');
+        if (removeBtn) {
+            if (this.selectedParticipants.length > 0) {
+                removeBtn.style.display = 'flex';
+                removeBtn.textContent = `🗑️ (${this.selectedParticipants.length})`;
+            } else {
+                removeBtn.style.display = 'none';
+            }
+        }
+    }
+
+    // NUEVO: Eliminar participantes seleccionados
+    removeSelectedParticipants() {
+        if (this.selectedParticipants.length === 0) {
+            this.showNotification('Selecciona participantes para eliminar');
+            return;
+        }
+
+        const count = this.selectedParticipants.length;
+        if (confirm(`¿Eliminar ${count} participante${count > 1 ? 's' : ''} seleccionado${count > 1 ? 's' : ''}? Se reiniciará la sesión actual.`)) {
+            // Filtrar participantes para mantener solo los no seleccionados
+            this.participants = this.participants.filter(p => 
+                !this.selectedParticipants.includes(p.id)
+            );
+            
+            // Limpiar selección
+            this.selectedParticipants = [];
+            
+            // Reiniciar sesión
+            this.resetSession();
+            
+            this.renderParticipants();
+            this.updateLeaderboard();
+            this.updateScoreVisualization();
+            this.updateCurrentPlayerDisplay();
+            this.updateDeleteButtonVisibility();
+            this.saveToStorage();
+            
+            this.showNotification(`${count} participante${count > 1 ? 's' : ''} eliminado${count > 1 ? 's' : ''}`);
+        }
+    }
+
+    // NUEVO: Reiniciar sesión (mantener participantes)
+    resetSession() {
+        this.participants.forEach(participant => {
+            participant.score = 0;
+            participant.rounds = 0;
+        });
+        this.currentRound = 1;
+        this.currentParticipantIndex = 0;
+        this.roundInProgress = false;
+        this.history = [];
+        this.renderHistory();
+        this.updateUI();
     }
 
     // Sistema de dados
@@ -701,6 +772,7 @@ class DiceMasterPro {
         this.setFormValue('language-select', this.settings.language);
         this.setFormValue('sound-toggle', this.settings.soundEnabled);
         this.setFormValue('target-score', this.settings.targetScore);
+        this.setFormValue('max-rounds', this.settings.maxRounds); // Nuevo
         this.setFormValue('rotate-turns', this.settings.rotateTurns);
         this.setFormValue('game-mode', this.settings.gameMode);
 
@@ -730,6 +802,7 @@ class DiceMasterPro {
         this.settings.language = this.getFormValue('language-select');
         this.settings.soundEnabled = this.getFormValue('sound-toggle');
         this.settings.targetScore = parseInt(this.getFormValue('target-score')) || 100;
+        this.settings.maxRounds = parseInt(this.getFormValue('max-rounds')) || 0; // Nuevo
         this.settings.rotateTurns = this.getFormValue('rotate-turns');
         this.settings.gameMode = this.getFormValue('game-mode');
 
@@ -738,6 +811,13 @@ class DiceMasterPro {
             this.settings.targetScore = 1000;
             this.setFormValue('target-score', 1000);
             this.showNotification('Puntaje objetivo ajustado al máximo de 1000');
+        }
+
+        // Validar rondas por sesión (máximo 50)
+        if (this.settings.maxRounds > 50) {
+            this.settings.maxRounds = 50;
+            this.setFormValue('max-rounds', 50);
+            this.showNotification('Rondas por sesión ajustadas al máximo de 50');
         }
 
         // Aplicar tema
@@ -785,14 +865,19 @@ class DiceMasterPro {
         
         if (this.participants.length === 0) {
             participantsList.innerHTML = '<div class="empty-state"><p>No hay participantes. Agrega el primero.</p></div>';
+            this.updateDeleteButtonVisibility();
             return;
         }
 
         participantsList.innerHTML = '';
         this.participants.forEach((participant, index) => {
             const isCurrentTurn = this.roundInProgress && index === this.currentParticipantIndex;
+            const isSelected = this.selectedParticipants.includes(participant.id);
+            
             const participantElement = document.createElement('div');
-            participantElement.className = `participant-item ${isCurrentTurn ? 'current-turn' : ''}`;
+            participantElement.className = `participant-item ${isCurrentTurn ? 'current-turn' : ''} ${isSelected ? 'selected' : ''}`;
+            participantElement.dataset.participantId = participant.id;
+            
             participantElement.innerHTML = `
                 <div class="participant-avatar" style="background-color: ${participant.color}">
                     ${participant.avatarEmoji}
@@ -803,26 +888,48 @@ class DiceMasterPro {
                 </div>
                 <div class="participant-actions">
                     <button class="btn-icon-small edit-participant" data-index="${index}">✏️</button>
-                    <button class="btn-icon-small remove-participant" data-index="${index}">🗑️</button>
                 </div>
             `;
             participantsList.appendChild(participantElement);
         });
 
         // Reconectar event listeners
+        document.querySelectorAll('.participant-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                // Evitar selección al hacer clic en botones de edición
+                if (e.target.closest('.edit-participant')) {
+                    return;
+                }
+                
+                const participantId = item.dataset.participantId;
+                this.toggleParticipantSelection(participantId);
+            });
+        });
+
         document.querySelectorAll('.edit-participant').forEach(btn => {
             btn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Evitar que se active la selección
                 const index = parseInt(e.target.closest('button').dataset.index);
                 this.showParticipantModal(this.participants[index]);
             });
         });
 
-        document.querySelectorAll('.remove-participant').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const index = parseInt(e.target.closest('button').dataset.index);
-                this.removeParticipant(index);
-            });
-        });
+        this.updateDeleteButtonVisibility();
+    }
+
+    // NUEVO: Alternar selección de participante
+    toggleParticipantSelection(participantId) {
+        const index = this.selectedParticipants.indexOf(participantId);
+        if (index > -1) {
+            // Deseleccionar
+            this.selectedParticipants.splice(index, 1);
+        } else {
+            // Seleccionar
+            this.selectedParticipants.push(participantId);
+        }
+        
+        this.renderParticipants();
+        this.updateDeleteButtonVisibility();
     }
 
     updateCurrentPlayerDisplay() {
@@ -969,8 +1076,6 @@ class DiceMasterPro {
         return displayHTML;
     }
 
-    // ... (resto de métodos como addToHistory, renderHistory, etc.)
-
     showNotification(message) {
         const notification = document.createElement('div');
         notification.style.cssText = `
@@ -1040,30 +1145,15 @@ class DiceMasterPro {
         }
     }
 
-    removeLastParticipant() {
-        if (this.participants.length === 0) {
-            this.showNotification('No hay participantes para eliminar');
-            return;
-        }
-
-        if (confirm('¿Eliminar el último participante? Se perderán todos los puntajes.')) {
-            this.participants.pop();
-            if (this.currentParticipantIndex >= this.participants.length) {
-                this.currentParticipantIndex = Math.max(0, this.participants.length - 1);
-            }
-            if (this.participants.length === 0) {
-                this.roundInProgress = false;
-            }
-            this.renderParticipants();
-            this.updateLeaderboard();
-            this.updateScoreVisualization();
-            this.updateCurrentPlayerDisplay();
-            this.saveToStorage();
-        }
-    }
-
     endRound() {
         this.currentRound++;
+        
+        // NUEVO: Verificar si se alcanzó el límite de rondas
+        if (this.settings.maxRounds > 0 && this.currentRound > this.settings.maxRounds) {
+            this.endSession();
+            return;
+        }
+        
         this.roundInProgress = false;
         
         if (this.settings.rotateTurns && this.participants.length > 1) {
@@ -1077,6 +1167,20 @@ class DiceMasterPro {
         this.saveToStorage();
         
         this.showRoundNotification();
+    }
+
+    // NUEVO: Finalizar sesión por límite de rondas
+    endSession() {
+        const sortedParticipants = [...this.participants].sort((a, b) => b.score - a.score);
+        const winner = sortedParticipants[0];
+        
+        setTimeout(() => {
+            alert(`🎉 ¡La sesión ha terminado! ${winner.name} es el ganador con ${winner.score} puntos después de ${this.settings.maxRounds} rondas.`);
+            this.saveSessionToHistory();
+            if (confirm('¿Quieres iniciar una nueva sesión?')) {
+                this.newSession();
+            }
+        }, 1000);
     }
 
     showRoundNotification() {
@@ -1249,6 +1353,7 @@ class DiceMasterPro {
     resetGame() {
         if (confirm('¿Reiniciar completamente el juego? Se perderán todos los datos incluyendo participantes e historial.')) {
             this.participants = [];
+            this.selectedParticipants = []; // Nuevo: limpiar selección
             this.history = [];
             this.sessionsHistory = [];
             this.currentRound = 1;
@@ -1368,6 +1473,7 @@ class DiceMasterPro {
 
     resetToDefault() {
         this.participants = [];
+        this.selectedParticipants = []; // Nuevo: limpiar selección
         this.history = [];
         this.sessionsHistory = [];
         this.currentRound = 1;
