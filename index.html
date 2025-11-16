@@ -27,139 +27,187 @@
                     </button>
                 </div>
             </div>
+            
+            <!-- Información de Sesión y Ronda -->
+            <div class="session-info-bar">
+                <div class="session-info-content">
+                    <div class="session-info-item">
+                        <span class="session-info-label">Sesión #</span>
+                        <span id="session-number" class="session-info-value">1</span>
+                    </div>
+                    <div class="session-info-item">
+                        <span class="session-info-label">Ronda</span>
+                        <span id="round-number" class="session-info-value">1</span>
+                    </div>
+                    <div class="session-info-item">
+                        <span class="session-info-label">Turno</span>
+                        <span id="current-turn-display" class="session-info-value">-</span>
+                    </div>
+                </div>
+            </div>
         </header>
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Panel de Control -->
-            <section class="control-panel">
-                <div class="game-info">
-                    <div class="session-counter">
-                        <span class="session-label">Sesión #</span>
-                        <span id="session-number" class="session-number">1</span>
+            <!-- Panel de Control Principal -->
+            <section class="main-game-panel">
+                <!-- Área de Resultados -->
+                <div class="results-area">
+                    <div class="dice-display" id="dice-display">
+                        <div class="dice-placeholder">
+                            <p>Lanza los dados para comenzar</p>
+                        </div>
                     </div>
-                    <div class="round-counter">
-                        <span class="round-label">Ronda</span>
-                        <span id="round-number" class="round-number">1</span>
+                    
+                    <div class="roll-results">
+                        <h3>Resultado Actual</h3>
+                        <div id="current-result" class="current-result">
+                            <span class="total-score">-</span>
+                            <div class="individual-dice" id="individual-dice"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Botón de Lanzar Dados Destacado -->
+                    <div class="roll-button-container">
+                        <button id="roll-btn" class="btn-roll-dice">
+                            <div class="dice-icon-large">⚅</div>
+                            <span>Lanzar Dados</span>
+                        </button>
                     </div>
                 </div>
 
-                <div class="game-controls">
-                    <h2>Controles del Juego</h2>
-                    <button id="roll-btn" class="btn-primary">🎯 Lanzar Dados</button>
-                </div>
+                <!-- Panel de Control Lateral -->
+                <div class="side-control-panel">
+                    <div class="control-panel">
+                        <div class="current-player">
+                            <h3>Turno Actual</h3>
+                            <div id="current-player-display" class="player-display">
+                                <div class="player-avatar" style="background-color: #4f46e5;">👤</div>
+                                <span class="player-name">Esperando jugadores...</span>
+                            </div>
+                            <div id="next-player-display" class="player-display next-player">
+                                <div class="player-avatar" style="background-color: #6b7280;">⏭️</div>
+                                <span class="player-name">Se prepara: -</span>
+                            </div>
+                        </div>
+                        
+                        <div class="game-controls">
+                            <h2>Controles del Juego</h2>
+                            <div class="control-buttons">
+                                <button id="new-session-btn" class="btn-secondary">Nueva Sesión</button>
+                                <button id="reset-btn" class="btn-outline">Reiniciar Todo</button>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="current-player">
-                    <h3>Turno Actual</h3>
-                    <div id="current-player-display" class="player-display">
-                        <div class="player-avatar" style="background-color: #4f46e5;">👤</div>
-                        <span class="player-name">Esperando jugadores...</span>
-                    </div>
-                    <div id="next-player-display" class="player-display next-player">
-                        <div class="player-avatar" style="background-color: #6b7280;">⏭️</div>
-                        <span class="player-name">Se prepara: -</span>
-                    </div>
+                    <!-- Panel de Participantes -->
+                    <section class="participants-panel">
+                        <div class="panel-header">
+                            <h2>Participantes</h2>
+                            <div class="participant-controls">
+                                <button id="add-participant-btn" class="btn-icon-small">+</button>
+                                <button id="remove-participant-btn" class="btn-icon-small" style="display: none;">🗑️</button>
+                            </div>
+                        </div>
+                        
+                        <div class="participants-list" id="participants-list">
+                            <div class="empty-state">
+                                <p>No hay participantes. Agrega el primero.</p>
+                            </div>
+                        </div>
+                    </section>
                 </div>
             </section>
 
-            <!-- Área de Resultados -->
-            <section class="results-area">
-                <div class="dice-display" id="dice-display">
-                    <div class="dice-placeholder">
-                        <p>Lanza los dados para comenzar</p>
+            <!-- Sección Unificada de Puntuaciones -->
+            <section class="scores-section">
+                <div class="panel-header">
+                    <h2>Puntuaciones</h2>
+                    <div class="score-controls">
+                        <select id="counter-type" class="counter-select">
+                            <option value="numbers">Números</option>
+                            <option value="matches">Fósforos</option>
+                            <option value="sticks">Palitos</option>
+                            <option value="stones">Piedras</option>
+                            <option value="beans">Porotos</option>
+                        </select>
+                        <button id="show-history-btn" class="btn-outline">Historial</button>
                     </div>
                 </div>
                 
-                <div class="roll-results">
-                    <h3>Resultado Actual</h3>
-                    <div id="current-result" class="current-result">
-                        <span class="total-score">-</span>
-                        <div class="individual-dice" id="individual-dice"></div>
+                <div class="scores-content">
+                    <!-- Tabla de Posiciones -->
+                    <div class="leaderboard-container">
+                        <h3>Tabla de Posiciones</h3>
+                        <div class="leaderboard-content">
+                            <table id="leaderboard-table">
+                                <thead>
+                                    <tr>
+                                        <th>Pos.</th>
+                                        <th>Participante</th>
+                                        <th>Puntaje</th>
+                                        <th>Rondas</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leaderboard-body">
+                                    <!-- Las filas se generarán dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
-            </section>
-
-            <!-- Panel de Participantes -->
-            <section class="participants-panel">
-                <div class="panel-header">
-                    <h2>Participantes</h2>
-                    <div class="participant-controls">
-                        <button id="add-participant-btn" class="btn-icon-small">+</button>
-                        <button id="remove-participant-btn" class="btn-icon-small" style="display: none;">🗑️</button>
-                    </div>
-                </div>
-                
-                <div class="participants-list" id="participants-list">
-                    <div class="empty-state">
-                        <p>No hay participantes. Agrega el primero.</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Tanteador Visual -->
-            <section class="score-panel">
-                <div class="panel-header">
-                    <h2>Tanteador Visual</h2>
-                    <select id="counter-type" class="counter-select">
-                        <option value="numbers">Números</option>
-                        <option value="matches">Fósforos</option>
-                        <option value="sticks">Palitos</option>
-                        <option value="stones">Piedras</option>
-                        <option value="beans">Porotos</option>
-                    </select>
-                </div>
-                <div class="score-display" id="score-display">
-                    <!-- Los contadores visuales se mostrarán aquí -->
-                </div>
-            </section>
-
-            <!-- Tabla de Posiciones -->
-            <section class="leaderboard">
-                <h2>Tabla de Posiciones</h2>
-                <div class="leaderboard-content">
-                    <table id="leaderboard-table">
-                        <thead>
-                            <tr>
-                                <th>Pos.</th>
-                                <th>Participante</th>
-                                <th>Puntaje</th>
-                                <th>Rondas</th>
-                            </tr>
-                        </thead>
-                        <tbody id="leaderboard-body">
-                            <!-- Las filas se generarán dinámicamente -->
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <!-- Historial y Controles -->
-            <section class="history-controls-panel">
-                <div class="panel-header">
-                    <h2>Historial de Tiradas</h2>
-                    <div class="history-controls">
-                        <button id="new-session-btn" class="btn-secondary">Nueva Sesión</button>
-                        <button id="reset-btn" class="btn-outline">Reiniciar Todo</button>
-                        <button id="clear-history-btn" class="btn-outline">Limpiar</button>
-                    </div>
-                </div>
-                <div class="history-list" id="history-list">
-                    <div class="empty-state">
-                        <p>No hay historial de tiradas aún.</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Historial de Partidas -->
-            <section class="sessions-history">
-                <h2>Historial de Partidas</h2>
-                <div class="sessions-list" id="sessions-list">
-                    <div class="empty-state">
-                        <p>No hay partidas anteriores.</p>
+                    
+                    <!-- Tanteador Visual -->
+                    <div class="visual-score-container">
+                        <h3>Tanteador Visual</h3>
+                        <div class="score-display" id="score-display">
+                            <!-- Los contadores visuales se mostrarán aquí -->
+                        </div>
                     </div>
                 </div>
             </section>
         </main>
+
+        <!-- Modal de Historial -->
+        <div id="history-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Historial de Juego</h2>
+                    <button id="close-history-modal" class="btn-icon">&times;</button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="history-tabs">
+                        <button class="tab-button active" data-tab="rolls">Historial de Tiradas</button>
+                        <button class="tab-button" data-tab="sessions">Historial de Partidas</button>
+                    </div>
+                    
+                    <div class="tab-content">
+                        <div id="rolls-tab" class="tab-pane active">
+                            <div class="history-controls">
+                                <button id="clear-history-btn" class="btn-outline">Limpiar Historial</button>
+                            </div>
+                            <div class="history-list" id="history-list">
+                                <div class="empty-state">
+                                    <p>No hay historial de tiradas aún.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="sessions-tab" class="tab-pane">
+                            <div class="sessions-list" id="sessions-list">
+                                <div class="empty-state">
+                                    <p>No hay partidas anteriores.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button id="close-history" class="btn-primary">Cerrar</button>
+                </div>
+            </div>
+        </div>
 
         <!-- Modal de Configuración de Dados -->
         <div id="dice-config-modal" class="modal">
@@ -207,10 +255,22 @@
                     <div class="setting-group">
                         <h3>Cantidad de Dados</h3>
                         <div class="dice-quantity-control">
-                            <input type="range" id="dice-count" min="1" max="12" value="2">
+                            <input type="range" id="dice-count" min="1" max="5" value="2">
                             <div class="quantity-display">
                                 <span id="dice-count-display">2</span>
                                 <span>dados</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- NUEVO: Lanzamientos por Jugador -->
+                    <div class="setting-group">
+                        <h3>Lanzamientos por Jugador por Ronda</h3>
+                        <div class="dice-quantity-control">
+                            <input type="range" id="rolls-per-player" min="1" max="5" value="1">
+                            <div class="quantity-display">
+                                <span id="rolls-per-player-display">1</span>
+                                <span>lanzamiento(s)</span>
                             </div>
                         </div>
                     </div>
@@ -247,7 +307,6 @@
                         </div>
                     </div>
 
-                    <!-- NUEVO: Modo de Juego -->
                     <div class="setting-group">
                         <h3>Modo de Juego</h3>
                         <select id="game-mode">
@@ -262,7 +321,6 @@
                         <input type="number" id="target-score" min="10" max="1000" value="100">
                     </div>
 
-                    <!-- NUEVO: Rondas por Sesión -->
                     <div class="setting-group">
                         <h3>Rondas por Sesión</h3>
                         <input type="number" id="max-rounds" min="0" max="50" value="0">
