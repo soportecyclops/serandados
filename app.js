@@ -1,5 +1,5 @@
 // DiceMaster Pro - Aplicación Web de Dados
-// Archivo principal de JavaScript - Versión Completa Corregida
+// Archivo principal de JavaScript - Versión Mejorada y Responsive
 
 class DiceMasterPro {
     constructor() {
@@ -10,9 +10,62 @@ class DiceMasterPro {
         this.currentRound = 1;
         this.totalSessions = 1;
         this.currentParticipantIndex = 0;
+        this.currentRollsInRound = 0; // Contador de lanzamientos en la ronda actual
         this.isRolling = false;
         this.roundInProgress = false;
         this.sessionStarted = false; // Controla si la sesión ha comenzado
+        
+        // Sistema de idiomas
+        this.translations = {
+            es: {
+                appTitle: "DiceMaster Pro",
+                session: "Sesión #",
+                round: "Ronda",
+                turn: "Turno",
+                rollDice: "Lanzar Dados",
+                waitingPlayers: "Esperando jugadores...",
+                nextPlayer: "Se prepara:",
+                participants: "Participantes",
+                addParticipant: "Agregar Participante",
+                editParticipant: "Editar Participante",
+                scores: "Puntuaciones",
+                leaderboard: "Tabla de Posiciones",
+                visualScore: "Tanteador Visual",
+                newSession: "Nueva Sesión",
+                resetAll: "Reiniciar Todo",
+                history: "Historial",
+                currentResult: "Resultado Actual",
+                noParticipants: "No hay participantes. Agrega el primero.",
+                noHistory: "No hay historial de tiradas aún.",
+                noSessions: "No hay partidas anteriores.",
+                startRolling: "Lanza los dados para comenzar",
+                // Y más traducciones...
+            },
+            en: {
+                appTitle: "DiceMaster Pro",
+                session: "Session #",
+                round: "Round",
+                turn: "Turn",
+                rollDice: "Roll Dice",
+                waitingPlayers: "Waiting for players...",
+                nextPlayer: "Next:",
+                participants: "Participants",
+                addParticipant: "Add Participant",
+                editParticipant: "Edit Participant",
+                scores: "Scores",
+                leaderboard: "Leaderboard",
+                visualScore: "Visual Score",
+                newSession: "New Session",
+                resetAll: "Reset All",
+                history: "History",
+                currentResult: "Current Result",
+                noParticipants: "No participants. Add the first one.",
+                noHistory: "No roll history yet.",
+                noSessions: "No previous games.",
+                startRolling: "Roll dice to start",
+                // Y más traducciones...
+            }
+        };
         
         this.settings = {
             language: 'es',
@@ -22,6 +75,7 @@ class DiceMasterPro {
             maxParticipants: 4,
             diceType: 'd6',
             diceCount: 2,
+            rollsPerPlayer: 1, // NUEVO: Lanzamientos por jugador por ronda
             counterType: 'numbers',
             rotateTurns: false,
             gameMode: 'classic',
@@ -30,44 +84,74 @@ class DiceMasterPro {
         
         this.gameModes = {
             'classic': {
-                name: 'Clásico',
-                description: 'Juego básico de acumulación de puntos',
+                name: { es: 'Clásico', en: 'Classic' },
+                description: { 
+                    es: 'Juego básico de acumulación de puntos', 
+                    en: 'Basic point accumulation game' 
+                },
                 minPlayers: 2,
                 maxPlayers: 10,
                 defaultTarget: 100,
-                specialRules: []
+                specialRules: { 
+                    es: ['Sin reglas especiales'], 
+                    en: ['No special rules'] 
+                }
             },
             'poker': {
-                name: 'Poker de Dados',
-                description: 'Busca las mejores combinaciones de poker',
+                name: { es: 'Poker de Dados', en: 'Dice Poker' },
+                description: { 
+                    es: 'Busca las mejores combinaciones de poker', 
+                    en: 'Find the best poker combinations' 
+                },
                 minPlayers: 2,
                 maxPlayers: 8,
                 defaultTarget: 1000,
-                specialRules: ['Combinaciones especiales', '3 rondas por jugador']
+                specialRules: { 
+                    es: ['Combinaciones especiales', '3 rondas por jugador'], 
+                    en: ['Special combinations', '3 rounds per player'] 
+                }
             },
             'generala': {
-                name: 'Generala',
-                description: 'Juego tradicional argentino',
+                name: { es: 'Generala', en: 'Generala' },
+                description: { 
+                    es: 'Juego tradicional argentino', 
+                    en: 'Traditional Argentinian game' 
+                },
                 minPlayers: 2,
                 maxPlayers: 6,
                 defaultTarget: 10000,
-                specialRules: ['Generala servida', 'Generala doble', 'Escalera']
+                specialRules: { 
+                    es: ['Generala servida', 'Generala doble', 'Escalera'], 
+                    en: ['Straight generala', 'Double generala', 'Straight'] 
+                }
             },
             'blackjack': {
-                name: 'Blackjack 21',
-                description: 'Acércate a 21 sin pasarte',
+                name: { es: 'Blackjack 21', en: 'Blackjack 21' },
+                description: { 
+                    es: 'Acércate a 21 sin pasarte', 
+                    en: 'Get close to 21 without going over' 
+                },
                 minPlayers: 2,
                 maxPlayers: 7,
                 defaultTarget: 500,
-                specialRules: ['Blackjack natural', 'Dividir pares', 'Doblar apuesta']
+                specialRules: { 
+                    es: ['Blackjack natural', 'Dividir pares', 'Doblar apuesta'], 
+                    en: ['Natural blackjack', 'Split pairs', 'Double down'] 
+                }
             },
             'truco': {
-                name: 'Truco Argentino',
-                description: 'Juego de cartas adaptado a dados',
+                name: { es: 'Truco Argentino', en: 'Argentinian Truco' },
+                description: { 
+                    es: 'Juego de cartas adaptado a dados', 
+                    en: 'Card game adapted to dice' 
+                },
                 minPlayers: 2,
                 maxPlayers: 4,
                 defaultTarget: 30,
-                specialRules: ['Envido', 'Truco', 'Flor']
+                specialRules: { 
+                    es: ['Envido', 'Truco', 'Flor'], 
+                    en: ['Envido', 'Truco', 'Flor'] 
+                }
             }
         };
         
@@ -88,6 +172,42 @@ class DiceMasterPro {
         this.updateScoreVisualization();
         this.renderHistory();
         this.renderSessionsHistory();
+        this.applyLanguage(); // Aplicar idioma al inicializar
+    }
+
+    // Sistema de idiomas
+    applyLanguage() {
+        const lang = this.settings.language;
+        const t = this.translations[lang];
+        
+        // Actualizar textos estáticos
+        this.setElementText('app-title', t.appTitle);
+        this.setElementText('session-label', t.session);
+        this.setElementText('round-label', t.round);
+        this.setElementText('turn-label', t.turn);
+        
+        // Botones y controles
+        const rollBtn = document.getElementById('roll-btn');
+        if (rollBtn) rollBtn.querySelector('span').textContent = t.rollDice;
+        
+        this.setElementText('participants-title', t.participants);
+        this.setElementText('scores-title', t.scores);
+        this.setElementText('new-session-btn', t.newSession);
+        this.setElementText('reset-btn', t.resetAll);
+        this.setElementText('show-history-btn', t.history);
+        
+        // Actualizar textos dinámicos
+        this.updateCurrentPlayerDisplay();
+        this.renderParticipants();
+        this.updateLeaderboard();
+        
+        // Actualizar modales
+        this.updateGameModeDescription();
+    }
+
+    translate(key) {
+        const lang = this.settings.language;
+        return this.translations[lang][key] || key;
     }
 
     // Sistema de almacenamiento
@@ -100,6 +220,7 @@ class DiceMasterPro {
             totalSessions: this.totalSessions,
             settings: this.settings,
             currentParticipantIndex: this.currentParticipantIndex,
+            currentRollsInRound: this.currentRollsInRound,
             roundInProgress: this.roundInProgress,
             sessionStarted: this.sessionStarted
         };
@@ -118,12 +239,16 @@ class DiceMasterPro {
                 this.totalSessions = gameState.totalSessions || 1;
                 this.settings = { ...this.settings, ...gameState.settings };
                 this.currentParticipantIndex = gameState.currentParticipantIndex || 0;
+                this.currentRollsInRound = gameState.currentRollsInRound || 0;
                 this.roundInProgress = gameState.roundInProgress || false;
                 this.sessionStarted = gameState.sessionStarted || false;
                 
-                // Asegurar que maxRounds existe
+                // Asegurar que maxRounds y rollsPerPlayer existen
                 if (typeof this.settings.maxRounds === 'undefined') {
                     this.settings.maxRounds = 0;
+                }
+                if (typeof this.settings.rollsPerPlayer === 'undefined') {
+                    this.settings.rollsPerPlayer = 1;
                 }
             } catch (e) {
                 console.error('Error loading saved game:', e);
@@ -163,10 +288,21 @@ class DiceMasterPro {
         this.setupButton('cancel-participant', () => this.hideParticipantModal());
 
         // Historial
+        this.setupButton('show-history-btn', () => this.showHistoryModal());
+        this.setupButton('close-history-modal', () => this.hideHistoryModal());
+        this.setupButton('close-history', () => this.hideHistoryModal());
         this.setupButton('clear-history-btn', () => this.clearHistory());
 
         // Pantalla completa
         this.setupButton('fullscreen-btn', () => this.toggleFullscreen());
+
+        // Tabs del historial
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const tabId = e.target.dataset.tab;
+                this.switchHistoryTab(tabId);
+            });
+        });
 
         // Contador visual
         const counterType = document.getElementById('counter-type');
@@ -178,13 +314,23 @@ class DiceMasterPro {
             });
         }
 
-        // Slider de cantidad de dados - MODIFICADO: máximo 5 dados
+        // Slider de cantidad de dados
         const diceCount = document.getElementById('dice-count');
         if (diceCount) {
-            diceCount.setAttribute('max', '5'); // NUEVO: Limitar a 5 dados
+            diceCount.setAttribute('max', '5');
             diceCount.addEventListener('input', (e) => {
                 const count = parseInt(e.target.value);
                 const display = document.getElementById('dice-count-display');
+                if (display) display.textContent = count;
+            });
+        }
+
+        // NUEVO: Slider de lanzamientos por jugador
+        const rollsPerPlayer = document.getElementById('rolls-per-player');
+        if (rollsPerPlayer) {
+            rollsPerPlayer.addEventListener('input', (e) => {
+                const count = parseInt(e.target.value);
+                const display = document.getElementById('rolls-per-player-display');
                 if (display) display.textContent = count;
             });
         }
@@ -247,25 +393,31 @@ class DiceMasterPro {
 
     // Verificar si un participante puede ser editado
     canEditParticipant(participant) {
-        // MODIFICADO: Solo se puede editar si la sesión NO ha comenzado
-        return !this.sessionStarted;
+        // Solo se puede editar si la sesión NO ha comenzado o estamos en la ronda 1
+        return !this.sessionStarted || (this.currentRound === 1 && this.currentRollsInRound === 0);
+    }
+
+    // Verificar si se pueden agregar participantes
+    canAddParticipants() {
+        // Se pueden agregar participantes solo en la ronda 1 antes de que comience el juego
+        return !this.sessionStarted || (this.currentRound === 1 && this.currentRollsInRound === 0);
     }
 
     // Eliminar participantes seleccionados
     removeSelectedParticipants() {
         if (this.selectedParticipants.length === 0) {
-            this.showNotification('Selecciona participantes para eliminar');
+            this.showNotification(this.translate('noParticipantsSelected'));
             return;
         }
 
-        // Verificar si la sesión ya comenzó
-        if (this.sessionStarted) {
-            this.showNotification('No se pueden eliminar participantes una vez iniciada la sesión');
+        // Verificar si se pueden eliminar participantes
+        if (!this.canAddParticipants()) {
+            this.showNotification(this.translate('cannotRemoveAfterStart'));
             return;
         }
 
         const count = this.selectedParticipants.length;
-        if (confirm(`¿Eliminar ${count} participante${count > 1 ? 's' : ''} seleccionado${count > 1 ? 's' : ''}?`)) {
+        if (confirm(this.translate('confirmRemoveParticipants').replace('{count}', count))) {
             // Filtrar participantes para mantener solo los no seleccionados
             this.participants = this.participants.filter(p => 
                 !this.selectedParticipants.includes(p.id)
@@ -281,7 +433,7 @@ class DiceMasterPro {
             this.updateDeleteButtonVisibility();
             this.saveToStorage();
             
-            this.showNotification(`${count} participante${count > 1 ? 's' : ''} eliminado${count > 1 ? 's' : ''}`);
+            this.showNotification(this.translate('participantsRemoved').replace('{count}', count));
         }
     }
 
@@ -293,6 +445,7 @@ class DiceMasterPro {
         });
         this.currentRound = 1;
         this.currentParticipantIndex = 0;
+        this.currentRollsInRound = 0;
         this.roundInProgress = false;
         this.sessionStarted = false;
         this.history = [];
@@ -300,24 +453,25 @@ class DiceMasterPro {
         this.updateUI();
     }
 
-    // Sistema de dados
+    // Sistema de dados - MODIFICADO para manejar múltiples lanzamientos
     rollDice() {
         if (this.isRolling || this.participants.length === 0) {
             if (this.participants.length === 0) {
-                this.showNotification('Agrega participantes antes de lanzar los dados.');
+                this.showNotification(this.translate('addParticipantsFirst'));
             }
             return;
         }
 
-        // MODIFICADO: Marcar que la sesión ha comenzado al primer lanzamiento de la primera ronda
-        if (!this.sessionStarted && this.currentRound === 1) {
+        // Marcar que la sesión ha comenzado al primer lanzamiento
+        if (!this.sessionStarted) {
             this.sessionStarted = true;
-            this.showNotification('¡Sesión iniciada! Ronda 1 en progreso.');
+            this.showNotification(this.translate('sessionStarted'));
         }
 
         if (!this.roundInProgress) {
             this.roundInProgress = true;
             this.currentParticipantIndex = 0;
+            this.currentRollsInRound = 0;
             this.updateCurrentPlayerDisplay();
         }
 
@@ -347,15 +501,21 @@ class DiceMasterPro {
             participant.score += total;
             participant.rounds++;
 
-            this.currentParticipantIndex++;
-            
-            // MODIFICADO: Si es el último participante, terminar la ronda automáticamente
-            if (this.currentParticipantIndex >= this.participants.length) {
-                this.endRound();
-            } else {
-                this.updateCurrentPlayerDisplay();
+            // Incrementar contador de lanzamientos
+            this.currentRollsInRound++;
+
+            // Verificar si el jugador actual ha completado sus lanzamientos
+            if (this.currentRollsInRound >= this.settings.rollsPerPlayer) {
+                this.currentRollsInRound = 0;
+                this.currentParticipantIndex++;
+                
+                // Si es el último participante, terminar la ronda
+                if (this.currentParticipantIndex >= this.participants.length) {
+                    this.endRound();
+                }
             }
 
+            this.updateCurrentPlayerDisplay();
             this.isRolling = false;
             
             this.saveToStorage();
@@ -370,7 +530,7 @@ class DiceMasterPro {
         }, 1200);
     }
 
-    // Aplicar reglas de modos de juego
+    // Aplicar reglas de modos de juego (sin cambios)
     applyGameModeRules(results, total, participant) {
         switch(this.settings.gameMode) {
             case 'poker':
@@ -430,12 +590,12 @@ class DiceMasterPro {
         let total = results.reduce((a, b) => a + b, 0);
         
         if (participant.rounds === 0 && total === 21) {
-            this.showNotification('¡Blackjack Natural! +50 puntos');
+            this.showNotification(this.translate('blackjackNatural'));
             return total + 50;
         }
 
         if (total > 21) {
-            this.showNotification('¡Te pasaste de 21! -20 puntos');
+            this.showNotification(this.translate('busted'));
             return -20;
         }
 
@@ -643,7 +803,7 @@ class DiceMasterPro {
         Object.entries(this.gameModes).forEach(([id, mode]) => {
             const option = document.createElement('option');
             option.value = id;
-            option.textContent = mode.name;
+            option.textContent = mode.name[this.settings.language];
             if (id === this.settings.gameMode) {
                 option.selected = true;
             }
@@ -667,7 +827,7 @@ class DiceMasterPro {
 
         const mode = this.gameModes[this.settings.gameMode];
         if (mode) {
-            descriptionElement.textContent = mode.description;
+            descriptionElement.textContent = mode.description[this.settings.language];
             
             if (this.settings.targetScore === 100) {
                 this.settings.targetScore = mode.defaultTarget;
@@ -675,17 +835,19 @@ class DiceMasterPro {
                 if (targetScoreInput) targetScoreInput.value = mode.defaultTarget;
             }
 
-            rulesElement.innerHTML = mode.specialRules.length > 0 
-                ? `<strong>Reglas especiales:</strong><br>${mode.specialRules.join(', ')}`
-                : 'Sin reglas especiales';
+            const rulesHTML = mode.specialRules[this.settings.language].length > 0 
+                ? `<strong>${this.translate('specialRules')}:</strong><br>${mode.specialRules[this.settings.language].join(', ')}`
+                : this.translate('noSpecialRules');
+                
+            rulesElement.innerHTML = rulesHTML;
         }
     }
 
     // Modales
     showParticipantModal(participant = null) {
-        // MODIFICADO: Verificar si se puede editar (solo si sesión no ha comenzado)
+        // Verificar si se puede editar
         if (participant && !this.canEditParticipant(participant)) {
-            this.showNotification('No se puede editar participantes una vez iniciada la sesión');
+            this.showNotification(this.translate('cannotEditAfterStart'));
             return;
         }
 
@@ -696,7 +858,7 @@ class DiceMasterPro {
         if (!modal || !title) return;
         
         if (participant) {
-            title.textContent = 'Editar Participante';
+            title.textContent = this.translate('editParticipant');
             document.getElementById('participant-name').value = participant.name;
             
             const avatarOption = document.querySelector(`[data-avatar-id="${participant.avatar}"]`);
@@ -705,13 +867,13 @@ class DiceMasterPro {
                 avatarOption.classList.add('selected');
             }
         } else {
-            // MODIFICADO: Verificar si se puede agregar participantes durante sesión activa
-            if (this.sessionStarted) {
-                this.showNotification('No se pueden agregar participantes durante una sesión activa');
+            // Verificar si se puede agregar participantes
+            if (!this.canAddParticipants()) {
+                this.showNotification(this.translate('cannotAddDuringSession'));
                 return;
             }
             
-            title.textContent = 'Agregar Participante';
+            title.textContent = this.translate('addParticipant');
             document.getElementById('participant-name').value = '';
             document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
             
@@ -741,20 +903,20 @@ class DiceMasterPro {
         const selectedAvatar = document.querySelector('.avatar-option.selected');
         
         if (!name) {
-            this.showNotification('Por favor ingresa un nombre para el participante');
+            this.showNotification(this.translate('enterParticipantName'));
             nameInput.focus();
             return;
         }
         
         if (!selectedAvatar) {
-            this.showNotification('Por favor selecciona un avatar');
+            this.showNotification(this.translate('selectAvatar'));
             return;
         }
 
         if (this.editingParticipant) {
-            // MODIFICADO: Verificar si se puede editar (solo si sesión no ha comenzado)
+            // Verificar si se puede editar
             if (!this.canEditParticipant(this.editingParticipant)) {
-                this.showNotification('No se puede editar participantes una vez iniciada la sesión');
+                this.showNotification(this.translate('cannotEditAfterStart'));
                 return;
             }
             
@@ -763,14 +925,14 @@ class DiceMasterPro {
             this.editingParticipant.avatarEmoji = selectedAvatar.dataset.avatarEmoji;
             this.editingParticipant.color = selectedAvatar.dataset.avatarColor;
         } else {
-            // MODIFICADO: Verificar si se puede agregar participantes durante sesión activa
-            if (this.sessionStarted) {
-                this.showNotification('No se pueden agregar participantes durante una sesión activa');
+            // Verificar si se puede agregar participantes
+            if (!this.canAddParticipants()) {
+                this.showNotification(this.translate('cannotAddDuringSession'));
                 return;
             }
             
             if (this.participants.length >= this.settings.maxParticipants) {
-                this.showNotification(`Máximo ${this.settings.maxParticipants} participantes permitidos`);
+                this.showNotification(this.translate('maxParticipantsReached').replace('{max}', this.settings.maxParticipants));
                 return;
             }
 
@@ -784,11 +946,11 @@ class DiceMasterPro {
                 rounds: 0
             });
 
-            // MODIFICADO: Activar ronda 1 automáticamente al crear el primer participante
+            // Activar ronda 1 automáticamente al crear el primer participante
             if (this.participants.length === 1) {
                 this.roundInProgress = true;
                 this.updateCurrentPlayerDisplay();
-                this.showNotification('¡Primer participante agregado! Ronda 1 activada.');
+                this.showNotification(this.translate('firstParticipantAdded'));
             }
         }
 
@@ -798,7 +960,36 @@ class DiceMasterPro {
         this.updateScoreVisualization();
         this.updateCurrentPlayerDisplay();
         this.saveToStorage();
-        this.showNotification('Participante guardado correctamente');
+        this.showNotification(this.translate('participantSaved'));
+    }
+
+    // Modal de historial
+    showHistoryModal() {
+        const modal = document.getElementById('history-modal');
+        if (!modal) return;
+        
+        this.renderHistory();
+        this.renderSessionsHistory();
+        modal.classList.add('active');
+    }
+
+    hideHistoryModal() {
+        const modal = document.getElementById('history-modal');
+        if (modal) modal.classList.remove('active');
+    }
+
+    switchHistoryTab(tabId) {
+        // Actualizar botones de tabs
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.classList.remove('active');
+        });
+        document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+        
+        // Actualizar contenido de tabs
+        document.querySelectorAll('.tab-pane').forEach(pane => {
+            pane.classList.remove('active');
+        });
+        document.getElementById(`${tabId}-tab`).classList.add('active');
     }
 
     // Modal de tema e idioma
@@ -837,6 +1028,7 @@ class DiceMasterPro {
     saveThemeLanguage() {
         console.log('Guardando configuración de tema e idioma...');
         
+        const oldLanguage = this.settings.language;
         this.settings.language = this.getFormValue('language-select');
         this.settings.soundEnabled = this.getFormValue('sound-toggle');
         this.settings.targetScore = parseInt(this.getFormValue('target-score')) || 100;
@@ -847,13 +1039,13 @@ class DiceMasterPro {
         if (this.settings.targetScore > 1000) {
             this.settings.targetScore = 1000;
             this.setFormValue('target-score', 1000);
-            this.showNotification('Puntaje objetivo ajustado al máximo de 1000');
+            this.showNotification(this.translate('targetScoreAdjusted'));
         }
 
         if (this.settings.maxRounds > 50) {
             this.settings.maxRounds = 50;
             this.setFormValue('max-rounds', 50);
-            this.showNotification('Rondas por sesión ajustadas al máximo de 50');
+            this.showNotification(this.translate('maxRoundsAdjusted'));
         }
 
         const activeTheme = document.querySelector('.theme-option.active');
@@ -864,8 +1056,14 @@ class DiceMasterPro {
         
         this.hideThemeLanguageModal();
         this.saveToStorage();
+        
+        // Si cambió el idioma, aplicar las traducciones
+        if (oldLanguage !== this.settings.language) {
+            this.applyLanguage();
+        }
+        
         this.updateUI();
-        this.showNotification('Configuración guardada correctamente');
+        this.showNotification(this.translate('settingsSaved'));
     }
 
     // Helpers para formularios
@@ -896,7 +1094,7 @@ class DiceMasterPro {
         if (!participantsList) return;
         
         if (this.participants.length === 0) {
-            participantsList.innerHTML = '<div class="empty-state"><p>No hay participantes. Agrega el primero.</p></div>';
+            participantsList.innerHTML = `<div class="empty-state"><p>${this.translate('noParticipants')}</p></div>`;
             this.updateDeleteButtonVisibility();
             return;
         }
@@ -913,7 +1111,7 @@ class DiceMasterPro {
             
             const editButton = canEdit ? 
                 `<button class="btn-icon-small edit-participant" data-index="${index}">✏️</button>` : 
-                `<button class="btn-icon-small" disabled title="No se puede editar durante la sesión">🔒</button>`;
+                `<button class="btn-icon-small" disabled title="${this.translate('cannotEditDuringSession')}">🔒</button>`;
             
             participantElement.innerHTML = `
                 <div class="participant-avatar" style="background-color: ${participant.color}">
@@ -921,7 +1119,7 @@ class DiceMasterPro {
                 </div>
                 <div class="participant-info">
                     <div class="participant-name">${participant.name}</div>
-                    <div class="participant-score">Puntaje: ${participant.score} | Rondas: ${participant.rounds}</div>
+                    <div class="participant-score">${this.translate('score')}: ${participant.score} | ${this.translate('rounds')}: ${participant.rounds}</div>
                 </div>
                 <div class="participant-actions">
                     ${editButton}
@@ -972,18 +1170,20 @@ class DiceMasterPro {
     updateCurrentPlayerDisplay() {
         const currentDisplay = document.getElementById('current-player-display');
         const nextDisplay = document.getElementById('next-player-display');
+        const currentTurnDisplay = document.getElementById('current-turn-display');
         
-        if (!currentDisplay || !nextDisplay) return;
+        if (!currentDisplay || !nextDisplay || !currentTurnDisplay) return;
         
         if (this.participants.length === 0 || !this.roundInProgress) {
             currentDisplay.innerHTML = `
                 <div class="player-avatar" style="background-color: #6b7280;">👤</div>
-                <span class="player-name">Esperando jugadores...</span>
+                <span class="player-name">${this.translate('waitingPlayers')}</span>
             `;
             nextDisplay.innerHTML = `
                 <div class="player-avatar" style="background-color: #6b7280;">⏭️</div>
-                <span class="player-name">Se prepara: -</span>
+                <span class="player-name">${this.translate('nextPlayer')} -</span>
             `;
+            currentTurnDisplay.textContent = '-';
             return;
         }
 
@@ -1002,8 +1202,10 @@ class DiceMasterPro {
             <div class="player-avatar" style="background-color: ${nextPlayer.color}">
                 ${nextPlayer.avatarEmoji}
             </div>
-            <span class="player-name">Se prepara: ${nextPlayer.name}</span>
+            <span class="player-name">${this.translate('nextPlayer')} ${nextPlayer.name}</span>
         `;
+        
+        currentTurnDisplay.textContent = currentPlayer.name;
     }
 
     updateLeaderboard() {
@@ -1017,7 +1219,7 @@ class DiceMasterPro {
             leaderboardBody.innerHTML = `
                 <tr>
                     <td colspan="4" style="text-align: center; padding: var(--spacing-xl); color: var(--text-muted);">
-                        No hay participantes
+                        ${this.translate('noParticipants')}
                     </td>
                 </tr>
             `;
@@ -1050,7 +1252,7 @@ class DiceMasterPro {
         scoreDisplay.innerHTML = '';
 
         if (this.participants.length === 0) {
-            scoreDisplay.innerHTML = '<div class="empty-state"><p>Agrega participantes para ver el tanteador</p></div>';
+            scoreDisplay.innerHTML = `<div class="empty-state"><p>${this.translate('addParticipantsForScore')}</p></div>`;
             return;
         }
 
@@ -1149,7 +1351,15 @@ class DiceMasterPro {
         const diceCountInput = document.getElementById('dice-count');
         if (diceCountInput) {
             diceCountInput.value = this.settings.diceCount;
-            diceCountInput.setAttribute('max', '5'); // NUEVO: Asegurar máximo 5 dados
+            diceCountInput.setAttribute('max', '5');
+        }
+        
+        // NUEVO: Actualizar display de lanzamientos por jugador
+        const rollsPerPlayerInput = document.getElementById('rolls-per-player');
+        const rollsPerPlayerDisplay = document.getElementById('rolls-per-player-display');
+        if (rollsPerPlayerInput && rollsPerPlayerDisplay) {
+            rollsPerPlayerInput.value = this.settings.rollsPerPlayer;
+            rollsPerPlayerDisplay.textContent = this.settings.rollsPerPlayer;
         }
         
         const counterType = document.getElementById('counter-type');
@@ -1162,12 +1372,12 @@ class DiceMasterPro {
 
         const addParticipantBtn = document.getElementById('add-participant-btn');
         if (addParticipantBtn) {
-            if (this.sessionStarted) {
+            if (!this.canAddParticipants()) {
                 addParticipantBtn.disabled = true;
-                addParticipantBtn.title = 'No se pueden agregar participantes durante la sesión';
+                addParticipantBtn.title = this.translate('cannotAddDuringSession');
             } else {
                 addParticipantBtn.disabled = false;
-                addParticipantBtn.title = 'Agregar participante';
+                addParticipantBtn.title = this.translate('addParticipant');
             }
         }
     }
@@ -1186,6 +1396,7 @@ class DiceMasterPro {
         }
         
         this.roundInProgress = false;
+        this.currentRollsInRound = 0;
         
         if (this.settings.rotateTurns && this.participants.length > 1) {
             const first = this.participants.shift();
@@ -1206,9 +1417,9 @@ class DiceMasterPro {
         const winner = sortedParticipants[0];
         
         setTimeout(() => {
-            alert(`🎉 ¡La sesión ha terminado! ${winner.name} es el ganador con ${winner.score} puntos después de ${this.settings.maxRounds} rondas.`);
+            alert(`🎉 ${this.translate('sessionEnded')} ${winner.name} ${this.translate('isTheWinner')} ${winner.score} ${this.translate('pointsAfter')} ${this.settings.maxRounds} ${this.translate('rounds')}.`);
             this.saveSessionToHistory();
-            if (confirm('¿Quieres iniciar una nueva sesión?')) {
+            if (confirm(this.translate('startNewSession'))) {
                 this.newSession();
             }
         }, 1000);
@@ -1232,7 +1443,7 @@ class DiceMasterPro {
             box-shadow: var(--shadow-lg);
             text-align: center;
         `;
-        notification.textContent = `¡Ronda ${this.currentRound}!`;
+        notification.textContent = `${this.translate('round')} ${this.currentRound}!`;
         
         document.body.appendChild(notification);
         
@@ -1255,7 +1466,7 @@ class DiceMasterPro {
             results: results,
             total: total,
             round: this.currentRound,
-            timestamp: new Date().toLocaleString('es-ES')
+            timestamp: new Date().toLocaleString(this.settings.language === 'es' ? 'es-ES' : 'en-US')
         };
         
         this.history.unshift(historyItem);
@@ -1267,7 +1478,7 @@ class DiceMasterPro {
         if (!historyList) return;
         
         if (this.history.length === 0) {
-            historyList.innerHTML = '<div class="empty-state"><p>No hay historial de tiradas aún.</p></div>';
+            historyList.innerHTML = `<div class="empty-state"><p>${this.translate('noHistory')}</p></div>`;
             return;
         }
 
@@ -1281,7 +1492,7 @@ class DiceMasterPro {
                         ${item.avatarEmoji}
                     </div>
                     <strong>${item.participant}</strong>
-                    <small>(Ronda ${item.round})</small>
+                    <small>(${this.translate('round')} ${item.round})</small>
                 </div>
                 <div class="history-dice">
                     ${item.results.map(result => `<span class="dice-result">${result}</span>`).join(' + ')}
@@ -1294,7 +1505,7 @@ class DiceMasterPro {
     }
 
     clearHistory() {
-        if (confirm('¿Estás seguro de que quieres limpiar todo el historial? Esta acción no se puede deshacer.')) {
+        if (confirm(this.translate('confirmClearHistory'))) {
             this.history = [];
             this.renderHistory();
             this.saveToStorage();
@@ -1306,7 +1517,7 @@ class DiceMasterPro {
         if (!sessionsList) return;
         
         if (this.sessionsHistory.length === 0) {
-            sessionsList.innerHTML = '<div class="empty-state"><p>No hay partidas anteriores.</p></div>';
+            sessionsList.innerHTML = `<div class="empty-state"><p>${this.translate('noSessions')}</p></div>`;
             return;
         }
 
@@ -1317,7 +1528,7 @@ class DiceMasterPro {
             sessionItem.innerHTML = `
                 <div class="session-info">
                     <div class="session-winner">${session.winner}</div>
-                    <div class="session-details">Puntaje: ${session.score} | Rondas: ${session.rounds}</div>
+                    <div class="session-details">${this.translate('score')}: ${session.score} | ${this.translate('rounds')}: ${session.rounds}</div>
                 </div>
                 <div class="session-date">${session.date}</div>
             `;
@@ -1336,7 +1547,7 @@ class DiceMasterPro {
             winner: winner.name,
             score: winner.score,
             rounds: this.currentRound,
-            date: new Date().toLocaleString('es-ES'),
+            date: new Date().toLocaleString(this.settings.language === 'es' ? 'es-ES' : 'en-US'),
             participants: this.participants.map(p => ({
                 name: p.name,
                 score: p.score,
@@ -1351,7 +1562,7 @@ class DiceMasterPro {
 
     newSession() {
         if (this.participants.length === 0) {
-            this.showNotification('Agrega participantes antes de iniciar una nueva sesión.');
+            this.showNotification(this.translate('addParticipantsFirst'));
             return;
         }
 
@@ -1359,13 +1570,14 @@ class DiceMasterPro {
             this.saveSessionToHistory();
         }
 
-        if (confirm('¿Iniciar una nueva sesión? Se reiniciarán todos los puntajes y el historial, pero se mantendrán los participantes.')) {
+        if (confirm(this.translate('confirmNewSession'))) {
             this.participants.forEach(participant => {
                 participant.score = 0;
                 participant.rounds = 0;
             });
             this.currentRound = 1;
             this.currentParticipantIndex = 0;
+            this.currentRollsInRound = 0;
             this.roundInProgress = false;
             this.sessionStarted = false;
             this.history = [];
@@ -1378,18 +1590,19 @@ class DiceMasterPro {
             this.updateCurrentPlayerDisplay();
             this.saveToStorage();
             
-            this.showNotification('¡Nueva sesión iniciada!');
+            this.showNotification(this.translate('newSessionStarted'));
         }
     }
 
     resetGame() {
-        if (confirm('¿Reiniciar completamente el juego? Se perderán todos los datos incluyendo participantes e historial.')) {
+        if (confirm(this.translate('confirmReset'))) {
             this.participants = [];
             this.selectedParticipants = [];
             this.history = [];
             this.sessionsHistory = [];
             this.currentRound = 1;
             this.currentParticipantIndex = 0;
+            this.currentRollsInRound = 0;
             this.roundInProgress = false;
             this.sessionStarted = false;
             this.totalSessions = 1;
@@ -1402,7 +1615,7 @@ class DiceMasterPro {
             this.updateCurrentPlayerDisplay();
             this.saveToStorage();
             
-            this.showNotification('Juego reiniciado');
+            this.showNotification(this.translate('gameReset'));
         }
     }
 
@@ -1410,9 +1623,9 @@ class DiceMasterPro {
         const winner = this.participants.find(p => p.score >= this.settings.targetScore);
         if (winner) {
             setTimeout(() => {
-                alert(`🎉 ¡${winner.name} ha ganado el juego con ${winner.score} puntos!`);
+                alert(`🎉 ${winner.name} ${this.translate('hasWon')} ${winner.score} ${this.translate('points')}!`);
                 this.saveSessionToHistory();
-                if (confirm('¿Quieres iniciar una nueva sesión?')) {
+                if (confirm(this.translate('startNewSession'))) {
                     this.newSession();
                 }
             }, 1000);
@@ -1437,9 +1650,18 @@ class DiceMasterPro {
         
         if (diceCountInput) {
             diceCountInput.value = this.settings.diceCount;
-            diceCountInput.setAttribute('max', '5'); // NUEVO: Limitar a 5 dados
+            diceCountInput.setAttribute('max', '5');
         }
         if (diceCountDisplay) diceCountDisplay.textContent = this.settings.diceCount;
+        
+        // NUEVO: Configurar lanzamientos por jugador
+        const rollsPerPlayerInput = document.getElementById('rolls-per-player');
+        const rollsPerPlayerDisplay = document.getElementById('rolls-per-player-display');
+        
+        if (rollsPerPlayerInput && rollsPerPlayerDisplay) {
+            rollsPerPlayerInput.value = this.settings.rollsPerPlayer;
+            rollsPerPlayerDisplay.textContent = this.settings.rollsPerPlayer;
+        }
         
         modal.classList.add('active');
     }
@@ -1452,6 +1674,7 @@ class DiceMasterPro {
     saveDiceConfig() {
         const selectedDiceType = document.querySelector('input[name="dice-type"]:checked');
         const diceCountInput = document.getElementById('dice-count');
+        const rollsPerPlayerInput = document.getElementById('rolls-per-player');
         
         if (selectedDiceType) {
             this.settings.diceType = selectedDiceType.value;
@@ -1459,18 +1682,21 @@ class DiceMasterPro {
         if (diceCountInput) {
             this.settings.diceCount = parseInt(diceCountInput.value);
         }
+        if (rollsPerPlayerInput) {
+            this.settings.rollsPerPlayer = parseInt(rollsPerPlayerInput.value);
+        }
         
         this.hideDiceConfigModal();
         
         if (this.participants.length > 0 && this.participants.some(p => p.score > 0)) {
-            if (confirm('La configuración de dados ha cambiado. ¿Reiniciar la partida actual?')) {
+            if (confirm(this.translate('confirmResetAfterConfig'))) {
                 this.newSession();
             }
         }
         
         this.updateUI();
         this.saveToStorage();
-        this.showNotification('Configuración de dados actualizada');
+        this.showNotification(this.translate('diceConfigUpdated'));
     }
 
     toggleFullscreen() {
@@ -1515,6 +1741,7 @@ class DiceMasterPro {
         this.currentRound = 1;
         this.totalSessions = 1;
         this.currentParticipantIndex = 0;
+        this.currentRollsInRound = 0;
         this.roundInProgress = false;
         this.sessionStarted = false;
     }
